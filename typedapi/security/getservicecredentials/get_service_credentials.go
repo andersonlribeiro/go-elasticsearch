@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Retrieves information of all service credentials for a service account.
 package getservicecredentials
 
 import (
-	gobytes "bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -35,6 +33,7 @@ import (
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 const (
@@ -53,12 +52,16 @@ type GetServiceCredentials struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
 
 	namespace string
 	service   string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewGetServiceCredentials type alias for index.
@@ -70,9 +73,9 @@ func NewGetServiceCredentialsFunc(tp elastictransport.Interface) NewGetServiceCr
 	return func(namespace, service string) *GetServiceCredentials {
 		n := New(tp)
 
-		n.Namespace(namespace)
+		n._namespace(namespace)
 
-		n.Service(service)
+		n._service(service)
 
 		return n
 	}
@@ -86,7 +89,12 @@ func New(tp elastictransport.Interface) *GetServiceCredentials {
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -111,9 +119,15 @@ func (r *GetServiceCredentials) HttpRequest(ctx context.Context) (*http.Request,
 		path.WriteString("service")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "namespace", r.namespace)
+		}
 		path.WriteString(r.namespace)
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "service", r.service)
+		}
 		path.WriteString(r.service)
 		path.WriteString("/")
 		path.WriteString("credential")
@@ -129,9 +143,9 @@ func (r *GetServiceCredentials) HttpRequest(ctx context.Context) (*http.Request,
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -147,25 +161,116 @@ func (r *GetServiceCredentials) HttpRequest(ctx context.Context) (*http.Request,
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r GetServiceCredentials) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r GetServiceCredentials) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "security.get_service_credentials")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "security.get_service_credentials")
+		if reader := instrument.RecordRequestBody(ctx, "security.get_service_credentials", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "security.get_service_credentials")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the GetServiceCredentials query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the GetServiceCredentials query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a getservicecredentials.Response
+func (r GetServiceCredentials) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "security.get_service_credentials")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r GetServiceCredentials) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r GetServiceCredentials) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "security.get_service_credentials")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -180,6 +285,14 @@ func (r GetServiceCredentials) IsSuccess(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the GetServiceCredentials query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
+	}
+
 	return false, nil
 }
 
@@ -192,18 +305,18 @@ func (r *GetServiceCredentials) Header(key, value string) *GetServiceCredentials
 
 // Namespace Name of the namespace.
 // API Name: namespace
-func (r *GetServiceCredentials) Namespace(v string) *GetServiceCredentials {
+func (r *GetServiceCredentials) _namespace(namespace string) *GetServiceCredentials {
 	r.paramSet |= namespaceMask
-	r.namespace = v
+	r.namespace = namespace
 
 	return r
 }
 
 // Service Name of the service name.
 // API Name: service
-func (r *GetServiceCredentials) Service(v string) *GetServiceCredentials {
+func (r *GetServiceCredentials) _service(service string) *GetServiceCredentials {
 	r.paramSet |= serviceMask
-	r.service = v
+	r.service = service
 
 	return r
 }

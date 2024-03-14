@@ -15,16 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 // ClusterIndicesShardsIndex type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/cluster/stats/types.ts#L40-L47
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/cluster/stats/types.ts#L51-L58
 type ClusterIndicesShardsIndex struct {
 	// Primaries Contains statistics about the number of primary shards assigned to selected
 	// nodes.

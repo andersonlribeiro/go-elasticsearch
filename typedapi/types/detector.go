@@ -15,20 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/excludefrequent"
 )
 
 // Detector type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/Detector.ts#L25-L67
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/Detector.ts#L25-L67
 type Detector struct {
 	// ByFieldName The field used to split the data. In particular, this property is used for
 	// analyzing the splits with respect to their own history. It is used for
@@ -55,7 +59,7 @@ type Detector struct {
 	FieldName *string `json:"field_name,omitempty"`
 	// Function The analysis function that is used. For example, `count`, `rare`, `mean`,
 	// `min`, `max`, or `sum`.
-	Function string `json:"function"`
+	Function *string `json:"function,omitempty"`
 	// OverFieldName The field used to split the data. In particular, this property is used for
 	// analyzing the splits with respect to the history of all splits. It is used
 	// for finding unusual values in the population of all splits.
@@ -66,6 +70,110 @@ type Detector struct {
 	// UseNull Defines whether a new series is used as the null series when there is no
 	// value for the by or partition fields.
 	UseNull *bool `json:"use_null,omitempty"`
+}
+
+func (s *Detector) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "by_field_name":
+			if err := dec.Decode(&s.ByFieldName); err != nil {
+				return err
+			}
+
+		case "custom_rules":
+			if err := dec.Decode(&s.CustomRules); err != nil {
+				return err
+			}
+
+		case "detector_description":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.DetectorDescription = &o
+
+		case "detector_index":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.DetectorIndex = &value
+			case float64:
+				f := int(v)
+				s.DetectorIndex = &f
+			}
+
+		case "exclude_frequent":
+			if err := dec.Decode(&s.ExcludeFrequent); err != nil {
+				return err
+			}
+
+		case "field_name":
+			if err := dec.Decode(&s.FieldName); err != nil {
+				return err
+			}
+
+		case "function":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Function = &o
+
+		case "over_field_name":
+			if err := dec.Decode(&s.OverFieldName); err != nil {
+				return err
+			}
+
+		case "partition_field_name":
+			if err := dec.Decode(&s.PartitionFieldName); err != nil {
+				return err
+			}
+
+		case "use_null":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.UseNull = &value
+			case bool:
+				s.UseNull = &v
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewDetector returns a Detector.

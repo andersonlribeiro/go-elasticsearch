@@ -15,20 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/indexprivilege"
 )
 
 // IndicesPrivileges type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/security/_types/Privileges.ts#L81-L104
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/security/_types/Privileges.ts#L82-L105
 type IndicesPrivileges struct {
 	// AllowRestrictedIndices Set to `true` if using wildcard or regular expressions for patterns that
 	// cover restricted indices. Implicitly, restricted indices have limited
@@ -38,7 +42,7 @@ type IndicesPrivileges struct {
 	// `allow_restricted_indices`.
 	AllowRestrictedIndices *bool `json:"allow_restricted_indices,omitempty"`
 	// FieldSecurity The document fields that the owners of the role have read access to.
-	FieldSecurity []FieldSecurity `json:"field_security,omitempty"`
+	FieldSecurity *FieldSecurity `json:"field_security,omitempty"`
 	// Names A list of indices (or index name patterns) to which the permissions in this
 	// entry apply.
 	Names []string `json:"names"`
@@ -48,7 +52,72 @@ type IndicesPrivileges struct {
 	// Query A search query that defines the documents the owners of the role have access
 	// to. A document within the specified indices must match this query for it to
 	// be accessible by the owners of the role.
-	Query *IndicesPrivilegesQuery `json:"query,omitempty"`
+	Query IndicesPrivilegesQuery `json:"query,omitempty"`
+}
+
+func (s *IndicesPrivileges) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "allow_restricted_indices":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.AllowRestrictedIndices = &value
+			case bool:
+				s.AllowRestrictedIndices = &v
+			}
+
+		case "field_security":
+			if err := dec.Decode(&s.FieldSecurity); err != nil {
+				return err
+			}
+
+		case "names":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := new(string)
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.Names = append(s.Names, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.Names); err != nil {
+					return err
+				}
+			}
+
+		case "privileges":
+			if err := dec.Decode(&s.Privileges); err != nil {
+				return err
+			}
+
+		case "query":
+			if err := dec.Decode(&s.Query); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewIndicesPrivileges returns a IndicesPrivileges.

@@ -15,24 +15,150 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // SpanNotQuery type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/query_dsl/span.ts#L55-L63
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/query_dsl/span.ts#L80-L104
 type SpanNotQuery struct {
-	Boost      *float32   `json:"boost,omitempty"`
-	Dist       *int       `json:"dist,omitempty"`
-	Exclude    *SpanQuery `json:"exclude,omitempty"`
-	Include    *SpanQuery `json:"include,omitempty"`
-	Post       *int       `json:"post,omitempty"`
-	Pre        *int       `json:"pre,omitempty"`
-	QueryName_ *string    `json:"_name,omitempty"`
+	// Boost Floating point number used to decrease or increase the relevance scores of
+	// the query.
+	// Boost values are relative to the default value of 1.0.
+	// A boost value between 0 and 1.0 decreases the relevance score.
+	// A value greater than 1.0 increases the relevance score.
+	Boost *float32 `json:"boost,omitempty"`
+	// Dist The number of tokens from within the include span that can’t have overlap
+	// with the exclude span.
+	// Equivalent to setting both `pre` and `post`.
+	Dist *int `json:"dist,omitempty"`
+	// Exclude Span query whose matches must not overlap those returned.
+	Exclude *SpanQuery `json:"exclude,omitempty"`
+	// Include Span query whose matches are filtered.
+	Include *SpanQuery `json:"include,omitempty"`
+	// Post The number of tokens after the include span that can’t have overlap with the
+	// exclude span.
+	Post *int `json:"post,omitempty"`
+	// Pre The number of tokens before the include span that can’t have overlap with the
+	// exclude span.
+	Pre        *int    `json:"pre,omitempty"`
+	QueryName_ *string `json:"_name,omitempty"`
+}
+
+func (s *SpanNotQuery) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "boost":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 32)
+				if err != nil {
+					return err
+				}
+				f := float32(value)
+				s.Boost = &f
+			case float64:
+				f := float32(v)
+				s.Boost = &f
+			}
+
+		case "dist":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Dist = &value
+			case float64:
+				f := int(v)
+				s.Dist = &f
+			}
+
+		case "exclude":
+			if err := dec.Decode(&s.Exclude); err != nil {
+				return err
+			}
+
+		case "include":
+			if err := dec.Decode(&s.Include); err != nil {
+				return err
+			}
+
+		case "post":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Post = &value
+			case float64:
+				f := int(v)
+				s.Post = &f
+			}
+
+		case "pre":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Pre = &value
+			case float64:
+				f := int(v)
+				s.Pre = &f
+			}
+
+		case "_name":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.QueryName_ = &o
+
+		}
+	}
+	return nil
 }
 
 // NewSpanNotQuery returns a SpanNotQuery.

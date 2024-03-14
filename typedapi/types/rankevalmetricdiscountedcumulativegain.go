@@ -15,22 +15,78 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // RankEvalMetricDiscountedCumulativeGain type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/rank_eval/types.ts#L66-L77
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/rank_eval/types.ts#L66-L77
 type RankEvalMetricDiscountedCumulativeGain struct {
 	// K Sets the maximum number of documents retrieved per query. This value will act
 	// in place of the usual size parameter in the query.
 	K *int `json:"k,omitempty"`
 	// Normalize If set to true, this metric will calculate the Normalized DCG.
 	Normalize *bool `json:"normalize,omitempty"`
+}
+
+func (s *RankEvalMetricDiscountedCumulativeGain) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "k":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.K = &value
+			case float64:
+				f := int(v)
+				s.K = &f
+			}
+
+		case "normalize":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Normalize = &value
+			case bool:
+				s.Normalize = &v
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewRankEvalMetricDiscountedCumulativeGain returns a RankEvalMetricDiscountedCumulativeGain.

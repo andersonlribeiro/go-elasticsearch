@@ -15,23 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package putdatafeed
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // Request holds the request body struct for the package putdatafeed
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/put_datafeed/MlPutDatafeedRequest.ts#L37-L171
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/put_datafeed/MlPutDatafeedRequest.ts#L37-L172
 type Request struct {
 
 	// Aggregations If set, the datafeed performs aggregation searches.
@@ -66,8 +68,8 @@ type Request struct {
 	// results. If the datafeed uses
 	// aggregations, this value must be divisible by the interval of the date
 	// histogram aggregation.
-	Frequency *types.Duration     `json:"frequency,omitempty"`
-	Headers   map[string][]string `json:"headers,omitempty"`
+	Frequency types.Duration    `json:"frequency,omitempty"`
+	Headers   types.HttpHeaders `json:"headers,omitempty"`
 	// Indices An array of index names. Wildcards are supported. If any of the indices are
 	// in remote clusters, the machine
 	// learning nodes must have the `remote_cluster_client` role.
@@ -98,9 +100,9 @@ type Request struct {
 	// value is randomly selected between `60s` and `120s`. This randomness improves
 	// the query performance
 	// when there are multiple jobs running on the same node.
-	QueryDelay *types.Duration `json:"query_delay,omitempty"`
+	QueryDelay types.Duration `json:"query_delay,omitempty"`
 	// RuntimeMappings Specifies runtime fields for the datafeed search.
-	RuntimeMappings map[string]types.RuntimeField `json:"runtime_mappings,omitempty"`
+	RuntimeMappings types.RuntimeFields `json:"runtime_mappings,omitempty"`
 	// ScriptFields Specifies scripts that evaluate custom expressions and returns script fields
 	// to the datafeed.
 	// The detector configuration objects in a job can contain functions that use
@@ -123,7 +125,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -132,4 +134,132 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "aggregations":
+			if s.Aggregations == nil {
+				s.Aggregations = make(map[string]types.Aggregations, 0)
+			}
+			if err := dec.Decode(&s.Aggregations); err != nil {
+				return err
+			}
+
+		case "chunking_config":
+			if err := dec.Decode(&s.ChunkingConfig); err != nil {
+				return err
+			}
+
+		case "delayed_data_check_config":
+			if err := dec.Decode(&s.DelayedDataCheckConfig); err != nil {
+				return err
+			}
+
+		case "frequency":
+			if err := dec.Decode(&s.Frequency); err != nil {
+				return err
+			}
+
+		case "headers":
+			if err := dec.Decode(&s.Headers); err != nil {
+				return err
+			}
+
+		case "indices", "indexes":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := new(string)
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.Indices = append(s.Indices, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.Indices); err != nil {
+					return err
+				}
+			}
+
+		case "indices_options":
+			if err := dec.Decode(&s.IndicesOptions); err != nil {
+				return err
+			}
+
+		case "job_id":
+			if err := dec.Decode(&s.JobId); err != nil {
+				return err
+			}
+
+		case "max_empty_searches":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.MaxEmptySearches = &value
+			case float64:
+				f := int(v)
+				s.MaxEmptySearches = &f
+			}
+
+		case "query":
+			if err := dec.Decode(&s.Query); err != nil {
+				return err
+			}
+
+		case "query_delay":
+			if err := dec.Decode(&s.QueryDelay); err != nil {
+				return err
+			}
+
+		case "runtime_mappings":
+			if err := dec.Decode(&s.RuntimeMappings); err != nil {
+				return err
+			}
+
+		case "script_fields":
+			if s.ScriptFields == nil {
+				s.ScriptFields = make(map[string]types.ScriptField, 0)
+			}
+			if err := dec.Decode(&s.ScriptFields); err != nil {
+				return err
+			}
+
+		case "scroll_size":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.ScrollSize = &value
+			case float64:
+				f := int(v)
+				s.ScrollSize = &f
+			}
+
+		}
+	}
+	return nil
 }

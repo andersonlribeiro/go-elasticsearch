@@ -15,21 +15,70 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // RunningStateSearchInterval type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/Datafeed.ts#L164-L169
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/Datafeed.ts#L214-L231
 type RunningStateSearchInterval struct {
-	End     *Duration `json:"end,omitempty"`
-	EndMs   int64     `json:"end_ms"`
-	Start   *Duration `json:"start,omitempty"`
-	StartMs int64     `json:"start_ms"`
+	// End The end time.
+	End Duration `json:"end,omitempty"`
+	// EndMs The end time as an epoch in milliseconds.
+	EndMs int64 `json:"end_ms"`
+	// Start The start time.
+	Start Duration `json:"start,omitempty"`
+	// StartMs The start time as an epoch in milliseconds.
+	StartMs int64 `json:"start_ms"`
+}
+
+func (s *RunningStateSearchInterval) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "end":
+			if err := dec.Decode(&s.End); err != nil {
+				return err
+			}
+
+		case "end_ms":
+			if err := dec.Decode(&s.EndMs); err != nil {
+				return err
+			}
+
+		case "start":
+			if err := dec.Decode(&s.Start); err != nil {
+				return err
+			}
+
+		case "start_ms":
+			if err := dec.Decode(&s.StartMs); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewRunningStateSearchInterval returns a RunningStateSearchInterval.

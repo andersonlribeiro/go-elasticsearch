@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
@@ -41,6 +39,7 @@ package types
 //	DateProperty
 //	AggregateMetricDoubleProperty
 //	DenseVectorProperty
+//	SparseVectorProperty
 //	FlattenedProperty
 //	NestedProperty
 //	ObjectProperty
@@ -71,99 +70,5 @@ package types
 //	IpRangeProperty
 //	LongRangeProperty
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/mapping/Property.ts#L93-L156
-type Property interface {
-	isProperty()
-}
-
-func (i BinaryProperty) isProperty() {}
-
-func (i BooleanProperty) isProperty() {}
-
-func (i DynamicProperty) isProperty() {}
-
-func (i JoinProperty) isProperty() {}
-
-func (i KeywordProperty) isProperty() {}
-
-func (i MatchOnlyTextProperty) isProperty() {}
-
-func (i PercolatorProperty) isProperty() {}
-
-func (i RankFeatureProperty) isProperty() {}
-
-func (i RankFeaturesProperty) isProperty() {}
-
-func (i SearchAsYouTypeProperty) isProperty() {}
-
-func (i TextProperty) isProperty() {}
-
-func (i VersionProperty) isProperty() {}
-
-func (i WildcardProperty) isProperty() {}
-
-func (i DateNanosProperty) isProperty() {}
-
-func (i DateProperty) isProperty() {}
-
-func (i AggregateMetricDoubleProperty) isProperty() {}
-
-func (i DenseVectorProperty) isProperty() {}
-
-func (i FlattenedProperty) isProperty() {}
-
-func (i NestedProperty) isProperty() {}
-
-func (i ObjectProperty) isProperty() {}
-
-func (i CompletionProperty) isProperty() {}
-
-func (i ConstantKeywordProperty) isProperty() {}
-
-func (i FieldAliasProperty) isProperty() {}
-
-func (i HistogramProperty) isProperty() {}
-
-func (i IpProperty) isProperty() {}
-
-func (i Murmur3HashProperty) isProperty() {}
-
-func (i TokenCountProperty) isProperty() {}
-
-func (i GeoPointProperty) isProperty() {}
-
-func (i GeoShapeProperty) isProperty() {}
-
-func (i PointProperty) isProperty() {}
-
-func (i ShapeProperty) isProperty() {}
-
-func (i ByteNumberProperty) isProperty() {}
-
-func (i DoubleNumberProperty) isProperty() {}
-
-func (i FloatNumberProperty) isProperty() {}
-
-func (i HalfFloatNumberProperty) isProperty() {}
-
-func (i IntegerNumberProperty) isProperty() {}
-
-func (i LongNumberProperty) isProperty() {}
-
-func (i ScaledFloatNumberProperty) isProperty() {}
-
-func (i ShortNumberProperty) isProperty() {}
-
-func (i UnsignedLongNumberProperty) isProperty() {}
-
-func (i DateRangeProperty) isProperty() {}
-
-func (i DoubleRangeProperty) isProperty() {}
-
-func (i FloatRangeProperty) isProperty() {}
-
-func (i IntegerRangeProperty) isProperty() {}
-
-func (i IpRangeProperty) isProperty() {}
-
-func (i LongRangeProperty) isProperty() {}
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/mapping/Property.ts#L94-L158
+type Property interface{}

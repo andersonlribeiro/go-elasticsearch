@@ -15,23 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package putjob
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // Request holds the request body struct for the package putjob
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/rollup/put_job/CreateRollupJobRequest.ts#L27-L89
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/rollup/put_job/CreateRollupJobRequest.ts#L27-L89
 type Request struct {
 
 	// Cron A cron string which defines the intervals when the rollup job should be
@@ -54,8 +56,8 @@ type Request struct {
 	// aggregations might be used. Rollups provide
 	// enough flexibility that you simply need to determine which fields are needed,
 	// not in what order they are needed.
-	Groups  types.Groupings     `json:"groups"`
-	Headers map[string][]string `json:"headers,omitempty"`
+	Groups  types.Groupings   `json:"groups"`
+	Headers types.HttpHeaders `json:"headers,omitempty"`
 	// IndexPattern The index or index pattern to roll up. Supports wildcard-style patterns
 	// (`logstash-*`). The job attempts to
 	// rollup the entire index or index-pattern.
@@ -79,7 +81,7 @@ type Request struct {
 	// unrelated jobs.
 	RollupIndex string `json:"rollup_index"`
 	// Timeout Time to wait for the request to complete.
-	Timeout *types.Duration `json:"timeout,omitempty"`
+	Timeout types.Duration `json:"timeout,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -89,7 +91,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -98,4 +100,88 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "cron":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Cron = o
+
+		case "groups":
+			if err := dec.Decode(&s.Groups); err != nil {
+				return err
+			}
+
+		case "headers":
+			if err := dec.Decode(&s.Headers); err != nil {
+				return err
+			}
+
+		case "index_pattern":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.IndexPattern = o
+
+		case "metrics":
+			if err := dec.Decode(&s.Metrics); err != nil {
+				return err
+			}
+
+		case "page_size":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.PageSize = value
+			case float64:
+				f := int(v)
+				s.PageSize = f
+			}
+
+		case "rollup_index":
+			if err := dec.Decode(&s.RollupIndex); err != nil {
+				return err
+			}
+
+		case "timeout":
+			if err := dec.Decode(&s.Timeout); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }

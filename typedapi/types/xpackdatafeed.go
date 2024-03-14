@@ -15,18 +15,59 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // XpackDatafeed type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/xpack/usage/types.ts#L73-L75
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/xpack/usage/types.ts#L77-L79
 type XpackDatafeed struct {
 	Count int64 `json:"count"`
+}
+
+func (s *XpackDatafeed) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "count":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.Count = value
+			case float64:
+				f := int64(v)
+				s.Count = f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewXpackDatafeed returns a XpackDatafeed.

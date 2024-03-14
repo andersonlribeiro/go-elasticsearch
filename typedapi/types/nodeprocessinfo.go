@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // NodeProcessInfo type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/info/types.ts#L383-L390
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/info/types.ts#L391-L398
 type NodeProcessInfo struct {
 	// Id Process identifier (PID)
 	Id int64 `json:"id"`
@@ -32,6 +38,60 @@ type NodeProcessInfo struct {
 	Mlockall bool `json:"mlockall"`
 	// RefreshIntervalInMillis Refresh interval for the process statistics
 	RefreshIntervalInMillis int64 `json:"refresh_interval_in_millis"`
+}
+
+func (s *NodeProcessInfo) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "id":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.Id = value
+			case float64:
+				f := int64(v)
+				s.Id = f
+			}
+
+		case "mlockall":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Mlockall = value
+			case bool:
+				s.Mlockall = v
+			}
+
+		case "refresh_interval_in_millis":
+			if err := dec.Decode(&s.RefreshIntervalInMillis); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewNodeProcessInfo returns a NodeProcessInfo.

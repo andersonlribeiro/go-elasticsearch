@@ -15,21 +15,56 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // TimingStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/DataframeAnalytics.ts#L421-L426
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/DataframeAnalytics.ts#L563-L568
 type TimingStats struct {
 	// ElapsedTime Runtime of the analysis in milliseconds.
 	ElapsedTime int64 `json:"elapsed_time"`
 	// IterationTime Runtime of the latest iteration of the analysis in milliseconds.
 	IterationTime *int64 `json:"iteration_time,omitempty"`
+}
+
+func (s *TimingStats) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "elapsed_time":
+			if err := dec.Decode(&s.ElapsedTime); err != nil {
+				return err
+			}
+
+		case "iteration_time":
+			if err := dec.Decode(&s.IterationTime); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewTimingStats returns a TimingStats.

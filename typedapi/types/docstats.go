@@ -15,19 +15,84 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // DocStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/Stats.ts#L64-L67
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/Stats.ts#L97-L109
 type DocStats struct {
-	Count   int64  `json:"count"`
+	// Count Total number of non-deleted documents across all primary shards assigned to
+	// selected nodes.
+	// This number is based on documents in Lucene segments and may include
+	// documents from nested fields.
+	Count int64 `json:"count"`
+	// Deleted Total number of deleted documents across all primary shards assigned to
+	// selected nodes.
+	// This number is based on documents in Lucene segments.
+	// Elasticsearch reclaims the disk space of deleted Lucene documents when a
+	// segment is merged.
 	Deleted *int64 `json:"deleted,omitempty"`
+}
+
+func (s *DocStats) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "count":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.Count = value
+			case float64:
+				f := int64(v)
+				s.Count = f
+			}
+
+		case "deleted":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.Deleted = &value
+			case float64:
+				f := int64(v)
+				s.Deleted = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewDocStats returns a DocStats.

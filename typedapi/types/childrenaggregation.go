@@ -15,20 +15,69 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // ChildrenAggregation type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/bucket.ts#L73-L75
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/bucket.ts#L111-L116
 type ChildrenAggregation struct {
-	Meta map[string]interface{} `json:"meta,omitempty"`
-	Name *string                `json:"name,omitempty"`
-	Type *string                `json:"type,omitempty"`
+	Meta Metadata `json:"meta,omitempty"`
+	Name *string  `json:"name,omitempty"`
+	// Type The child type that should be selected.
+	Type *string `json:"type,omitempty"`
+}
+
+func (s *ChildrenAggregation) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "meta":
+			if err := dec.Decode(&s.Meta); err != nil {
+				return err
+			}
+
+		case "name":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Name = &o
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewChildrenAggregation returns a ChildrenAggregation.

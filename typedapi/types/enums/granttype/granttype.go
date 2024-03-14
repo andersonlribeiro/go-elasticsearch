@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Package granttype
 package granttype
 
 import "strings"
 
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/security/_types/GrantType.ts#L20-L23
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/security/_types/GrantType.ts#L20-L29
 type GrantType struct {
 	Name string
 }
@@ -41,7 +39,7 @@ func (g GrantType) MarshalText() (text []byte, err error) {
 }
 
 func (g *GrantType) UnmarshalText(text []byte) error {
-	switch strings.ToLower(string(text)) {
+	switch strings.ReplaceAll(strings.ToLower(string(text)), "\"", "") {
 
 	case "password":
 		*g = Password

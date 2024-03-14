@@ -15,22 +15,72 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // NodeInfoSettingsCluster type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/info/types.ts#L131-L138
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/info/types.ts#L132-L142
 type NodeInfoSettingsCluster struct {
 	DeprecationIndexing *DeprecationIndexing            `json:"deprecation_indexing,omitempty"`
 	Election            NodeInfoSettingsClusterElection `json:"election"`
-	InitialMasterNodes  *string                         `json:"initial_master_nodes,omitempty"`
+	InitialMasterNodes  []string                        `json:"initial_master_nodes,omitempty"`
 	Name                string                          `json:"name"`
 	Routing             *IndexRouting                   `json:"routing,omitempty"`
+}
+
+func (s *NodeInfoSettingsCluster) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "deprecation_indexing":
+			if err := dec.Decode(&s.DeprecationIndexing); err != nil {
+				return err
+			}
+
+		case "election":
+			if err := dec.Decode(&s.Election); err != nil {
+				return err
+			}
+
+		case "initial_master_nodes":
+			if err := dec.Decode(&s.InitialMasterNodes); err != nil {
+				return err
+			}
+
+		case "name":
+			if err := dec.Decode(&s.Name); err != nil {
+				return err
+			}
+
+		case "routing":
+			if err := dec.Decode(&s.Routing); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewNodeInfoSettingsCluster returns a NodeInfoSettingsCluster.

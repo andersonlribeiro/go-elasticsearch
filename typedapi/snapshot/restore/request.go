@@ -15,24 +15,27 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package restore
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // Request holds the request body struct for the package restore
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/snapshot/restore/SnapshotRestoreRequest.ts#L25-L50
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/snapshot/restore/SnapshotRestoreRequest.ts#L25-L51
 type Request struct {
+	FeatureStates       []string             `json:"feature_states,omitempty"`
 	IgnoreIndexSettings []string             `json:"ignore_index_settings,omitempty"`
 	IgnoreUnavailable   *bool                `json:"ignore_unavailable,omitempty"`
 	IncludeAliases      *bool                `json:"include_aliases,omitempty"`
@@ -51,7 +54,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -60,4 +63,134 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "feature_states":
+			if err := dec.Decode(&s.FeatureStates); err != nil {
+				return err
+			}
+
+		case "ignore_index_settings":
+			if err := dec.Decode(&s.IgnoreIndexSettings); err != nil {
+				return err
+			}
+
+		case "ignore_unavailable":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.IgnoreUnavailable = &value
+			case bool:
+				s.IgnoreUnavailable = &v
+			}
+
+		case "include_aliases":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.IncludeAliases = &value
+			case bool:
+				s.IncludeAliases = &v
+			}
+
+		case "include_global_state":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.IncludeGlobalState = &value
+			case bool:
+				s.IncludeGlobalState = &v
+			}
+
+		case "index_settings":
+			if err := dec.Decode(&s.IndexSettings); err != nil {
+				return err
+			}
+
+		case "indices":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := new(string)
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.Indices = append(s.Indices, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.Indices); err != nil {
+					return err
+				}
+			}
+
+		case "partial":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Partial = &value
+			case bool:
+				s.Partial = &v
+			}
+
+		case "rename_pattern":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.RenamePattern = &o
+
+		case "rename_replacement":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.RenameReplacement = &o
+
+		}
+	}
+	return nil
 }

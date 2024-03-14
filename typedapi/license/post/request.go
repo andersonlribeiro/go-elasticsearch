@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package post
 
@@ -31,7 +29,7 @@ import (
 
 // Request holds the request body struct for the package post
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/license/post/PostLicenseRequest.ts#L23-L44
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/license/post/PostLicenseRequest.ts#L23-L43
 type Request struct {
 	License *types.License `json:"license,omitempty"`
 	// Licenses A sequence of one or more JSON documents containing the license information.
@@ -45,7 +43,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 

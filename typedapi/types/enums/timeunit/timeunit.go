@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Package timeunit
 package timeunit
 
 import "strings"
 
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/Time.ts#L69-L84
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/Time.ts#L69-L77
 type TimeUnit struct {
 	Name string
 }
@@ -51,7 +49,7 @@ func (t TimeUnit) MarshalText() (text []byte, err error) {
 }
 
 func (t *TimeUnit) UnmarshalText(text []byte) error {
-	switch strings.ToLower(string(text)) {
+	switch strings.ReplaceAll(strings.ToLower(string(text)), "\"", "") {
 
 	case "nanos":
 		*t = Nanos

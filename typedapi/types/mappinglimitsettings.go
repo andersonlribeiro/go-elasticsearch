@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // MappingLimitSettings type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/IndexSettings.ts#L402-L415
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/IndexSettings.ts#L405-L418
 type MappingLimitSettings struct {
 	Coerce          *bool                                `json:"coerce,omitempty"`
 	Depth           *MappingLimitSettingsDepth           `json:"depth,omitempty"`
@@ -34,6 +40,84 @@ type MappingLimitSettings struct {
 	NestedFields    *MappingLimitSettingsNestedFields    `json:"nested_fields,omitempty"`
 	NestedObjects   *MappingLimitSettingsNestedObjects   `json:"nested_objects,omitempty"`
 	TotalFields     *MappingLimitSettingsTotalFields     `json:"total_fields,omitempty"`
+}
+
+func (s *MappingLimitSettings) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "coerce":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Coerce = &value
+			case bool:
+				s.Coerce = &v
+			}
+
+		case "depth":
+			if err := dec.Decode(&s.Depth); err != nil {
+				return err
+			}
+
+		case "dimension_fields":
+			if err := dec.Decode(&s.DimensionFields); err != nil {
+				return err
+			}
+
+		case "field_name_length":
+			if err := dec.Decode(&s.FieldNameLength); err != nil {
+				return err
+			}
+
+		case "ignore_malformed":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.IgnoreMalformed = &value
+			case bool:
+				s.IgnoreMalformed = &v
+			}
+
+		case "nested_fields":
+			if err := dec.Decode(&s.NestedFields); err != nil {
+				return err
+			}
+
+		case "nested_objects":
+			if err := dec.Decode(&s.NestedObjects); err != nil {
+				return err
+			}
+
+		case "total_fields":
+			if err := dec.Decode(&s.TotalFields); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewMappingLimitSettings returns a MappingLimitSettings.

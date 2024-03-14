@@ -15,27 +15,102 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // StandardAnalyzer type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/analysis/analyzers.ts#L95-L99
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/analysis/analyzers.ts#L95-L99
 type StandardAnalyzer struct {
 	MaxTokenLength *int     `json:"max_token_length,omitempty"`
 	Stopwords      []string `json:"stopwords,omitempty"`
 	Type           string   `json:"type,omitempty"`
 }
 
+func (s *StandardAnalyzer) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "max_token_length":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.MaxTokenLength = &value
+			case float64:
+				f := int(v)
+				s.MaxTokenLength = &f
+			}
+
+		case "stopwords":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := new(string)
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.Stopwords = append(s.Stopwords, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.Stopwords); err != nil {
+					return err
+				}
+			}
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
+// MarshalJSON override marshalling to include literal value
+func (s StandardAnalyzer) MarshalJSON() ([]byte, error) {
+	type innerStandardAnalyzer StandardAnalyzer
+	tmp := innerStandardAnalyzer{
+		MaxTokenLength: s.MaxTokenLength,
+		Stopwords:      s.Stopwords,
+		Type:           s.Type,
+	}
+
+	tmp.Type = "standard"
+
+	return json.Marshal(tmp)
+}
+
 // NewStandardAnalyzer returns a StandardAnalyzer.
 func NewStandardAnalyzer() *StandardAnalyzer {
 	r := &StandardAnalyzer{}
-
-	r.Type = "standard"
 
 	return r
 }

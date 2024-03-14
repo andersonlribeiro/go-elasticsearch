@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Deletes the specified dangling index
 package deletedanglingindex
 
 import (
-	gobytes "bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -36,6 +34,7 @@ import (
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 const (
@@ -52,11 +51,15 @@ type DeleteDanglingIndex struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
 
 	indexuuid string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewDeleteDanglingIndex type alias for index.
@@ -68,7 +71,7 @@ func NewDeleteDanglingIndexFunc(tp elastictransport.Interface) NewDeleteDangling
 	return func(indexuuid string) *DeleteDanglingIndex {
 		n := New(tp)
 
-		n.IndexUuid(indexuuid)
+		n._indexuuid(indexuuid)
 
 		return n
 	}
@@ -76,13 +79,18 @@ func NewDeleteDanglingIndexFunc(tp elastictransport.Interface) NewDeleteDangling
 
 // Deletes the specified dangling index
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/master/modules-gateway-dangling-indices.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-gateway-dangling-indices.html
 func New(tp elastictransport.Interface) *DeleteDanglingIndex {
 	r := &DeleteDanglingIndex{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -105,6 +113,9 @@ func (r *DeleteDanglingIndex) HttpRequest(ctx context.Context) (*http.Request, e
 		path.WriteString("_dangling")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "indexuuid", r.indexuuid)
+		}
 		path.WriteString(r.indexuuid)
 
 		method = http.MethodDelete
@@ -118,9 +129,9 @@ func (r *DeleteDanglingIndex) HttpRequest(ctx context.Context) (*http.Request, e
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -136,25 +147,116 @@ func (r *DeleteDanglingIndex) HttpRequest(ctx context.Context) (*http.Request, e
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r DeleteDanglingIndex) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r DeleteDanglingIndex) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "dangling_indices.delete_dangling_index")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "dangling_indices.delete_dangling_index")
+		if reader := instrument.RecordRequestBody(ctx, "dangling_indices.delete_dangling_index", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "dangling_indices.delete_dangling_index")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the DeleteDanglingIndex query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the DeleteDanglingIndex query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a deletedanglingindex.Response
+func (r DeleteDanglingIndex) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "dangling_indices.delete_dangling_index")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r DeleteDanglingIndex) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r DeleteDanglingIndex) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "dangling_indices.delete_dangling_index")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -169,6 +271,14 @@ func (r DeleteDanglingIndex) IsSuccess(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the DeleteDanglingIndex query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
+	}
+
 	return false, nil
 }
 
@@ -181,33 +291,33 @@ func (r *DeleteDanglingIndex) Header(key, value string) *DeleteDanglingIndex {
 
 // IndexUuid The UUID of the dangling index
 // API Name: indexuuid
-func (r *DeleteDanglingIndex) IndexUuid(v string) *DeleteDanglingIndex {
+func (r *DeleteDanglingIndex) _indexuuid(indexuuid string) *DeleteDanglingIndex {
 	r.paramSet |= indexuuidMask
-	r.indexuuid = v
+	r.indexuuid = indexuuid
 
 	return r
 }
 
 // AcceptDataLoss Must be set to true in order to delete the dangling index
 // API name: accept_data_loss
-func (r *DeleteDanglingIndex) AcceptDataLoss(b bool) *DeleteDanglingIndex {
-	r.values.Set("accept_data_loss", strconv.FormatBool(b))
+func (r *DeleteDanglingIndex) AcceptDataLoss(acceptdataloss bool) *DeleteDanglingIndex {
+	r.values.Set("accept_data_loss", strconv.FormatBool(acceptdataloss))
 
 	return r
 }
 
 // MasterTimeout Specify timeout for connection to master
 // API name: master_timeout
-func (r *DeleteDanglingIndex) MasterTimeout(value string) *DeleteDanglingIndex {
-	r.values.Set("master_timeout", value)
+func (r *DeleteDanglingIndex) MasterTimeout(duration string) *DeleteDanglingIndex {
+	r.values.Set("master_timeout", duration)
 
 	return r
 }
 
 // Timeout Explicit operation timeout
 // API name: timeout
-func (r *DeleteDanglingIndex) Timeout(value string) *DeleteDanglingIndex {
-	r.values.Set("timeout", value)
+func (r *DeleteDanglingIndex) Timeout(duration string) *DeleteDanglingIndex {
+	r.values.Set("timeout", duration)
 
 	return r
 }

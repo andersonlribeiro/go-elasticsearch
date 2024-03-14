@@ -15,25 +15,76 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/migrationstatus"
 )
 
 // GetMigrationFeature type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/migration/get_feature_upgrade_status/GetFeatureUpgradeStatusResponse.ts#L37-L42
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/migration/get_feature_upgrade_status/GetFeatureUpgradeStatusResponse.ts#L37-L42
 type GetMigrationFeature struct {
 	FeatureName         string                          `json:"feature_name"`
 	Indices             []MigrationFeatureIndexInfo     `json:"indices"`
 	MigrationStatus     migrationstatus.MigrationStatus `json:"migration_status"`
 	MinimumIndexVersion string                          `json:"minimum_index_version"`
+}
+
+func (s *GetMigrationFeature) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "feature_name":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.FeatureName = o
+
+		case "indices":
+			if err := dec.Decode(&s.Indices); err != nil {
+				return err
+			}
+
+		case "migration_status":
+			if err := dec.Decode(&s.MigrationStatus); err != nil {
+				return err
+			}
+
+		case "minimum_index_version":
+			if err := dec.Decode(&s.MinimumIndexVersion); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewGetMigrationFeature returns a GetMigrationFeature.

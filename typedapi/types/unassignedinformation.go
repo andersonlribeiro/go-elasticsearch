@@ -15,20 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/unassignedinformationreason"
 )
 
 // UnassignedInformation type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/cluster/allocation_explain/types.ts#L117-L125
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/cluster/allocation_explain/types.ts#L117-L125
 type UnassignedInformation struct {
 	AllocationStatus         *string                                                 `json:"allocation_status,omitempty"`
 	At                       DateTime                                                `json:"at"`
@@ -37,6 +41,102 @@ type UnassignedInformation struct {
 	FailedAllocationAttempts *int                                                    `json:"failed_allocation_attempts,omitempty"`
 	LastAllocationStatus     *string                                                 `json:"last_allocation_status,omitempty"`
 	Reason                   unassignedinformationreason.UnassignedInformationReason `json:"reason"`
+}
+
+func (s *UnassignedInformation) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "allocation_status":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.AllocationStatus = &o
+
+		case "at":
+			if err := dec.Decode(&s.At); err != nil {
+				return err
+			}
+
+		case "delayed":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Delayed = &value
+			case bool:
+				s.Delayed = &v
+			}
+
+		case "details":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Details = &o
+
+		case "failed_allocation_attempts":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.FailedAllocationAttempts = &value
+			case float64:
+				f := int(v)
+				s.FailedAllocationAttempts = &f
+			}
+
+		case "last_allocation_status":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.LastAllocationStatus = &o
+
+		case "reason":
+			if err := dec.Decode(&s.Reason); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewUnassignedInformation returns a UnassignedInformation.

@@ -15,20 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 // Hop type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/graph/_types/Hop.ts#L23-L27
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/graph/_types/Hop.ts#L23-L36
 type Hop struct {
-	Connections *Hop               `json:"connections,omitempty"`
-	Query       Query              `json:"query"`
-	Vertices    []VertexDefinition `json:"vertices"`
+	// Connections Specifies one or more fields from which you want to extract terms that are
+	// associated with the specified vertices.
+	Connections *Hop `json:"connections,omitempty"`
+	// Query An optional guiding query that constrains the Graph API as it explores
+	// connected terms.
+	Query Query `json:"query"`
+	// Vertices Contains the fields you are interested in.
+	Vertices []VertexDefinition `json:"vertices"`
 }
 
 // NewHop returns a Hop.

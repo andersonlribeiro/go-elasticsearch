@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Package migrationstatus
 package migrationstatus
 
 import "strings"
 
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/migration/get_feature_upgrade_status/GetFeatureUpgradeStatusResponse.ts#L30-L35
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/migration/get_feature_upgrade_status/GetFeatureUpgradeStatusResponse.ts#L30-L35
 type MigrationStatus struct {
 	Name string
 }
@@ -45,7 +43,7 @@ func (m MigrationStatus) MarshalText() (text []byte, err error) {
 }
 
 func (m *MigrationStatus) UnmarshalText(text []byte) error {
-	switch strings.ToLower(string(text)) {
+	switch strings.ReplaceAll(strings.ToLower(string(text)), "\"", "") {
 
 	case "NO_MIGRATION_NEEDED":
 		*m = NOMIGRATIONNEEDED

@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // TransformAuthorization type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/Authorization.ts#L59-L71
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/Authorization.ts#L59-L71
 type TransformAuthorization struct {
 	// ApiKey If an API key was used for the most recent update to the transform, its name
 	// and identifier are listed in the response.
@@ -35,6 +41,48 @@ type TransformAuthorization struct {
 	// ServiceAccount If a service account was used for the most recent update to the transform,
 	// the account name is listed in the response.
 	ServiceAccount *string `json:"service_account,omitempty"`
+}
+
+func (s *TransformAuthorization) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "api_key":
+			if err := dec.Decode(&s.ApiKey); err != nil {
+				return err
+			}
+
+		case "roles":
+			if err := dec.Decode(&s.Roles); err != nil {
+				return err
+			}
+
+		case "service_account":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.ServiceAccount = &o
+
+		}
+	}
+	return nil
 }
 
 // NewTransformAuthorization returns a TransformAuthorization.

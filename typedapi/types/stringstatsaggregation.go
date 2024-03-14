@@ -15,21 +15,111 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // StringStatsAggregation type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/metric.ts#L147-L149
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/metric.ts#L284-L290
 type StringStatsAggregation struct {
-	Field            *string  `json:"field,omitempty"`
-	Missing          *Missing `json:"missing,omitempty"`
-	Script           *Script  `json:"script,omitempty"`
-	ShowDistribution *bool    `json:"show_distribution,omitempty"`
+	// Field The field on which to run the aggregation.
+	Field *string `json:"field,omitempty"`
+	// Missing The value to apply to documents that do not have a value.
+	// By default, documents without a value are ignored.
+	Missing Missing `json:"missing,omitempty"`
+	Script  Script  `json:"script,omitempty"`
+	// ShowDistribution Shows the probability distribution for all characters.
+	ShowDistribution *bool `json:"show_distribution,omitempty"`
+}
+
+func (s *StringStatsAggregation) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "field":
+			if err := dec.Decode(&s.Field); err != nil {
+				return err
+			}
+
+		case "missing":
+			if err := dec.Decode(&s.Missing); err != nil {
+				return err
+			}
+
+		case "script":
+			message := json.RawMessage{}
+			if err := dec.Decode(&message); err != nil {
+				return err
+			}
+			keyDec := json.NewDecoder(bytes.NewReader(message))
+			for {
+				t, err := keyDec.Token()
+				if err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+					return err
+				}
+
+				switch t {
+
+				case "lang", "options", "source":
+					o := NewInlineScript()
+					localDec := json.NewDecoder(bytes.NewReader(message))
+					if err := localDec.Decode(&o); err != nil {
+						return err
+					}
+					s.Script = o
+
+				case "id":
+					o := NewStoredScriptId()
+					localDec := json.NewDecoder(bytes.NewReader(message))
+					if err := localDec.Decode(&o); err != nil {
+						return err
+					}
+					s.Script = o
+
+				}
+			}
+
+		case "show_distribution":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.ShowDistribution = &value
+			case bool:
+				s.ShowDistribution = &v
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewStringStatsAggregation returns a StringStatsAggregation.

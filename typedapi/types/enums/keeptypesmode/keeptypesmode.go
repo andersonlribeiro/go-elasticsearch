@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Package keeptypesmode
 package keeptypesmode
 
 import "strings"
 
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/analysis/token_filters.ts#L212-L215
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/analysis/token_filters.ts#L213-L216
 type KeepTypesMode struct {
 	Name string
 }
@@ -41,7 +39,7 @@ func (k KeepTypesMode) MarshalText() (text []byte, err error) {
 }
 
 func (k *KeepTypesMode) UnmarshalText(text []byte) error {
-	switch strings.ToLower(string(text)) {
+	switch strings.ReplaceAll(strings.ToLower(string(text)), "\"", "") {
 
 	case "include":
 		*k = Include

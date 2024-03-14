@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // RankEvalMetricPrecision type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/rank_eval/types.ts#L42-L52
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/rank_eval/types.ts#L42-L52
 type RankEvalMetricPrecision struct {
 	// IgnoreUnlabeled Controls how unlabeled documents in the search results are counted. If set to
 	// true, unlabeled documents are ignored and neither count as relevant or
@@ -36,6 +42,72 @@ type RankEvalMetricPrecision struct {
 	// RelevantRatingThreshold Sets the rating threshold above which documents are considered to be
 	// "relevant".
 	RelevantRatingThreshold *int `json:"relevant_rating_threshold,omitempty"`
+}
+
+func (s *RankEvalMetricPrecision) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "ignore_unlabeled":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.IgnoreUnlabeled = &value
+			case bool:
+				s.IgnoreUnlabeled = &v
+			}
+
+		case "k":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.K = &value
+			case float64:
+				f := int(v)
+				s.K = &f
+			}
+
+		case "relevant_rating_threshold":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.RelevantRatingThreshold = &value
+			case float64:
+				f := int(v)
+				s.RelevantRatingThreshold = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewRankEvalMetricPrecision returns a RankEvalMetricPrecision.

@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // PluginStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/Stats.ts#L137-L148
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/Stats.ts#L180-L190
 type PluginStats struct {
 	Classname            string   `json:"classname"`
 	Description          string   `json:"description"`
@@ -34,8 +40,104 @@ type PluginStats struct {
 	JavaVersion          string   `json:"java_version"`
 	Licensed             bool     `json:"licensed"`
 	Name                 string   `json:"name"`
-	Type                 string   `json:"type"`
 	Version              string   `json:"version"`
+}
+
+func (s *PluginStats) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "classname":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Classname = o
+
+		case "description":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Description = o
+
+		case "elasticsearch_version":
+			if err := dec.Decode(&s.ElasticsearchVersion); err != nil {
+				return err
+			}
+
+		case "extended_plugins":
+			if err := dec.Decode(&s.ExtendedPlugins); err != nil {
+				return err
+			}
+
+		case "has_native_controller":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.HasNativeController = value
+			case bool:
+				s.HasNativeController = v
+			}
+
+		case "java_version":
+			if err := dec.Decode(&s.JavaVersion); err != nil {
+				return err
+			}
+
+		case "licensed":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Licensed = value
+			case bool:
+				s.Licensed = v
+			}
+
+		case "name":
+			if err := dec.Decode(&s.Name); err != nil {
+				return err
+			}
+
+		case "version":
+			if err := dec.Decode(&s.Version); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewPluginStats returns a PluginStats.

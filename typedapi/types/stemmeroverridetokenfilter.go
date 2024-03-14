@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // StemmerOverrideTokenFilter type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/analysis/token_filters.ts#L313-L317
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/analysis/token_filters.ts#L314-L318
 type StemmerOverrideTokenFilter struct {
 	Rules     []string `json:"rules,omitempty"`
 	RulesPath *string  `json:"rules_path,omitempty"`
@@ -32,11 +38,71 @@ type StemmerOverrideTokenFilter struct {
 	Version   *string  `json:"version,omitempty"`
 }
 
+func (s *StemmerOverrideTokenFilter) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "rules":
+			if err := dec.Decode(&s.Rules); err != nil {
+				return err
+			}
+
+		case "rules_path":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.RulesPath = &o
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		case "version":
+			if err := dec.Decode(&s.Version); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
+// MarshalJSON override marshalling to include literal value
+func (s StemmerOverrideTokenFilter) MarshalJSON() ([]byte, error) {
+	type innerStemmerOverrideTokenFilter StemmerOverrideTokenFilter
+	tmp := innerStemmerOverrideTokenFilter{
+		Rules:     s.Rules,
+		RulesPath: s.RulesPath,
+		Type:      s.Type,
+		Version:   s.Version,
+	}
+
+	tmp.Type = "stemmer_override"
+
+	return json.Marshal(tmp)
+}
+
 // NewStemmerOverrideTokenFilter returns a StemmerOverrideTokenFilter.
 func NewStemmerOverrideTokenFilter() *StemmerOverrideTokenFilter {
 	r := &StemmerOverrideTokenFilter{}
-
-	r.Type = "stemmer_override"
 
 	return r
 }

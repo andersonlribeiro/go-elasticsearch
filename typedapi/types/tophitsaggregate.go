@@ -15,19 +15,54 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // TopHitsAggregate type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/Aggregate.ts#L645-L648
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/Aggregate.ts#L654-L657
 type TopHitsAggregate struct {
-	Hits HitsMetadata           `json:"hits"`
-	Meta map[string]interface{} `json:"meta,omitempty"`
+	Hits HitsMetadata `json:"hits"`
+	Meta Metadata     `json:"meta,omitempty"`
+}
+
+func (s *TopHitsAggregate) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "hits":
+			if err := dec.Decode(&s.Hits); err != nil {
+				return err
+			}
+
+		case "meta":
+			if err := dec.Decode(&s.Meta); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewTopHitsAggregate returns a TopHitsAggregate.

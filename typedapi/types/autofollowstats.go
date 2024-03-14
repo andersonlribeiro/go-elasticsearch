@@ -15,22 +15,103 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // AutoFollowStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ccr/stats/types.ts.ts#L33-L39
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ccr/stats/types.ts.ts#L33-L39
 type AutoFollowStats struct {
 	AutoFollowedClusters                     []AutoFollowedCluster `json:"auto_followed_clusters"`
 	NumberOfFailedFollowIndices              int64                 `json:"number_of_failed_follow_indices"`
 	NumberOfFailedRemoteClusterStateRequests int64                 `json:"number_of_failed_remote_cluster_state_requests"`
 	NumberOfSuccessfulFollowIndices          int64                 `json:"number_of_successful_follow_indices"`
 	RecentAutoFollowErrors                   []ErrorCause          `json:"recent_auto_follow_errors"`
+}
+
+func (s *AutoFollowStats) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "auto_followed_clusters":
+			if err := dec.Decode(&s.AutoFollowedClusters); err != nil {
+				return err
+			}
+
+		case "number_of_failed_follow_indices":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.NumberOfFailedFollowIndices = value
+			case float64:
+				f := int64(v)
+				s.NumberOfFailedFollowIndices = f
+			}
+
+		case "number_of_failed_remote_cluster_state_requests":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.NumberOfFailedRemoteClusterStateRequests = value
+			case float64:
+				f := int64(v)
+				s.NumberOfFailedRemoteClusterStateRequests = f
+			}
+
+		case "number_of_successful_follow_indices":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.NumberOfSuccessfulFollowIndices = value
+			case float64:
+				f := int64(v)
+				s.NumberOfSuccessfulFollowIndices = f
+			}
+
+		case "recent_auto_follow_errors":
+			if err := dec.Decode(&s.RecentAutoFollowErrors); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewAutoFollowStats returns a AutoFollowStats.

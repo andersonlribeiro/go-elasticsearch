@@ -15,16 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 // EqlFeaturesSequences type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/xpack/usage/types.ts#L126-L133
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/xpack/usage/types.ts#L130-L137
 type EqlFeaturesSequences struct {
 	SequenceMaxspan           uint `json:"sequence_maxspan"`
 	SequenceQueriesFiveOrMore uint `json:"sequence_queries_five_or_more"`

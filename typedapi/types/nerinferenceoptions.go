@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // NerInferenceOptions type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/inference.ts#L225-L233
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/inference.ts#L255-L264
 type NerInferenceOptions struct {
 	// ClassificationLabels The token classification labels. Must be IOB formatted tags
 	ClassificationLabels []string `json:"classification_labels,omitempty"`
@@ -33,6 +39,54 @@ type NerInferenceOptions struct {
 	ResultsField *string `json:"results_field,omitempty"`
 	// Tokenization The tokenization options
 	Tokenization *TokenizationConfigContainer `json:"tokenization,omitempty"`
+	Vocabulary   *Vocabulary                  `json:"vocabulary,omitempty"`
+}
+
+func (s *NerInferenceOptions) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "classification_labels":
+			if err := dec.Decode(&s.ClassificationLabels); err != nil {
+				return err
+			}
+
+		case "results_field":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.ResultsField = &o
+
+		case "tokenization":
+			if err := dec.Decode(&s.Tokenization); err != nil {
+				return err
+			}
+
+		case "vocabulary":
+			if err := dec.Decode(&s.Vocabulary); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewNerInferenceOptions returns a NerInferenceOptions.

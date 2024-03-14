@@ -15,22 +15,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package clearscroll
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 )
 
 // Request holds the request body struct for the package clearscroll
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/clear_scroll/ClearScrollRequest.ts#L23-L36
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/clear_scroll/ClearScrollRequest.ts#L23-L45
 type Request struct {
+
+	// ScrollId Scroll IDs to clear.
+	// To clear all scroll IDs, use `_all`.
 	ScrollId []string `json:"scroll_id,omitempty"`
 }
 
@@ -41,7 +45,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -50,4 +54,39 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "scroll_id":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := new(string)
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.ScrollId = append(s.ScrollId, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.ScrollId); err != nil {
+					return err
+				}
+			}
+
+		}
+	}
+	return nil
 }

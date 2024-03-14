@@ -15,23 +15,76 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // BucketCorrelationAggregation type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/pipeline.ts#L114-L120
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/pipeline.ts#L129-L135
 type BucketCorrelationAggregation struct {
 	// BucketsPath Path to the buckets that contain one set of values to correlate.
-	BucketsPath *BucketsPath `json:"buckets_path,omitempty"`
+	BucketsPath BucketsPath `json:"buckets_path,omitempty"`
 	// Function The correlation function to execute.
 	Function BucketCorrelationFunction `json:"function"`
-	Meta     map[string]interface{}    `json:"meta,omitempty"`
+	Meta     Metadata                  `json:"meta,omitempty"`
 	Name     *string                   `json:"name,omitempty"`
+}
+
+func (s *BucketCorrelationAggregation) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "buckets_path":
+			if err := dec.Decode(&s.BucketsPath); err != nil {
+				return err
+			}
+
+		case "function":
+			if err := dec.Decode(&s.Function); err != nil {
+				return err
+			}
+
+		case "meta":
+			if err := dec.Decode(&s.Meta); err != nil {
+				return err
+			}
+
+		case "name":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Name = &o
+
+		}
+	}
+	return nil
 }
 
 // NewBucketCorrelationAggregation returns a BucketCorrelationAggregation.

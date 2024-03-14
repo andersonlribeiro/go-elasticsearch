@@ -28,6 +28,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -531,51 +533,51 @@ func TestProductCheckError(t *testing.T) {
 func TestFingerprint(t *testing.T) {
 	body := []byte(`{"body": true"}"`)
 	cert, err := tls.X509KeyPair([]byte(`-----BEGIN CERTIFICATE-----
-MIIDYjCCAkqgAwIBAgIVAIZQH0fe5U+bGQ6m1JUBO/AQkQ/9MA0GCSqGSIb3DQEB
+MIIDYjCCAkqgAwIBAgIVAIClHav09e9XGWJrnshywAjUHTnXMA0GCSqGSIb3DQEB
 CwUAMDQxMjAwBgNVBAMTKUVsYXN0aWMgQ2VydGlmaWNhdGUgVG9vbCBBdXRvZ2Vu
-ZXJhdGVkIENBMB4XDTIwMDMyNzE5MTcxMVoXDTIzMDMyNzE5MTcxMVowEzERMA8G
-A1UEAxMIaW5zdGFuY2UwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDB
-fco1t1+sE1gTwTVGcXKZqJTP2GjMHM0cfJE5KKfwC5B+pHADRT6FZxvepgKjEBDt
-CK+2Rmotyeb15XXMSKguNhyT+2PuKvT5r05L7P91XRYXrwxG2swJPtct7A87xdFa
-Ek+YRpqGGmTaux2jOELMiAmqEzoj6w/xFq+LF4SolTW4wOL2eLFkEFHBX2oCwU5T
-Q+B+7E9zL45nFWlkeRGJ+ZQTnRNZ/1r4N9A9Gtj4x/H1/y4inWndikdxAb5QiEYJ
-T+vbQWzHYWjz13ttHJsz+6T8rvA1jK+buHgVh4K8lV13X9k54soBqHB8va7/KIJP
-g8gvd6vusEI7Bmfl1as7AgMBAAGjgYswgYgwHQYDVR0OBBYEFKnnpvuVYwtFSUis
-WwN9OHLyExzJMB8GA1UdIwQYMBaAFJYCWKn16g+acbing4Vl45QGUBs0MDsGA1Ud
+ZXJhdGVkIENBMB4XDTIzMDMyODE3MDIzOVoXDTI2MDMyNzE3MDIzOVowEzERMA8G
+A1UEAxMIaW5zdGFuY2UwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCV
++t5/g6u2r3awCtzqp17KG0hRxzkVoJoF8DYzVh+Rv9ymxQW0C/U8dQihAjkZHaIA
+n49lSyNLkwWtmqQgPcimV4d6XuTYx2ahDixXYtjmoOSwH5dRtovKPCNKDPkUj9Vq
+NwMW0uB1VxniMKI4DnYFqBgHL9kQKhQqvas6Gx0X6ptGRCLYCtVxeFcau6nnkZJt
+urb+HNV5waOh0uTmsqnnslK3NjCQ/f030vPKxM5fOqOU5ajUHpZFJ6ZFmS32074H
+l+mZoRT/GtbnVtIg+CJXsWThF3/L4iBImv+rkY9MKX5fyMLJgmIJG68S90IQGR8c
+Z2lZYzC0J7zjMsYlODbDAgMBAAGjgYswgYgwHQYDVR0OBBYEFIDIcECn3AVHc3jk
+MpQ4r7Kc3WCsMB8GA1UdIwQYMBaAFJYCWKn16g+acbing4Vl45QGUBs0MDsGA1Ud
 EQQ0MDKCCWxvY2FsaG9zdIIIaW5zdGFuY2WHBH8AAAGHEAAAAAAAAAAAAAAAAAAA
-AAGCA2VzMTAJBgNVHRMEAjAAMA0GCSqGSIb3DQEBCwUAA4IBAQAPNsIoD4GBrTgR
-jfvBuHS6eU16P95m16O8Mdpr4SMQgWLQUhs8aoVgfwpg2TkbCWxOe6khJOyNm7bf
-fW4aFQ/OHcQV4Czz3c7eOHTWSyMlCOv+nRXd4giJZ5TOHw1zKGmKXOIvhvE6RfdF
-uBBfrusk164H4iykm0Bbr/wo4d6wuebp3ZYLPw5zV0D08rsaR+3VJ9VxWuFpdm/r
-2onYOohyuX9DRjAczasC+CRRQN4eHJlRfSQB8WfTKw3EloRJJDAg6SJyGiAJ++BF
-hnqfNcEyKes2AWagFF9aTbEJMrzMhH+YB5F+S/PWvMUlFzcoocVKqc4pIrjKUNWO
-6nbTxeAB
+AAGCA2VzMTAJBgNVHRMEAjAAMA0GCSqGSIb3DQEBCwUAA4IBAQBtX3RQ5ATpfORM
+lrnhaUPGOWkjnb3p3BrdAWUaWoh136QhaXqxKiALQQhTtTerkXOcuquy9MmAyYvS
+9fDdGvLCAO8pPCXjnzonCHerCLGdS7f/eqvSFWCdy7LPHzTAFYfVWVvbZed+83TL
+bDY63AMwIexj34vJEStMapuFwWx05fstE8qZWIbYCL87sF5H/MRhzlz3ScAhQ1N7
+tODH7zvLzSxFGGEzCIKZ0iPFKbd3Y0wE6SptDSKhOqlnC8kkNeI2GjWsqVfHKsoF
+pDFmri7IfOucuvalXJ6xiHPr9RDbuxEXs0u8mteT5nFQo7EaEGdHpg1pNGbfBOzP
+lmj/dRS9
 -----END CERTIFICATE-----`), []byte(`-----BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEAwX3KNbdfrBNYE8E1RnFymaiUz9hozBzNHHyROSin8AuQfqRw
-A0U+hWcb3qYCoxAQ7QivtkZqLcnm9eV1zEioLjYck/tj7ir0+a9OS+z/dV0WF68M
-RtrMCT7XLewPO8XRWhJPmEaahhpk2rsdozhCzIgJqhM6I+sP8RavixeEqJU1uMDi
-9nixZBBRwV9qAsFOU0PgfuxPcy+OZxVpZHkRifmUE50TWf9a+DfQPRrY+Mfx9f8u
-Ip1p3YpHcQG+UIhGCU/r20Fsx2Fo89d7bRybM/uk/K7wNYyvm7h4FYeCvJVdd1/Z
-OeLKAahwfL2u/yiCT4PIL3er7rBCOwZn5dWrOwIDAQABAoIBAFcm4ICnculf4Sks
-umFbUiISA81GjZV6V4zAMu1K+bGuk8vnJyjh9JJD6hK0NbXa07TgV7zDJKoxKd2S
-GCgGhfIin2asMcuh/6vDIYIjYsErR3stdlsnzAVSD7v4ergSlwR6AO32xz0mAE1h
-QK029yeHEstPU72/7/NIo5MD6dXAbut1MzgijZD8RQo1z21D6qmLcPTVTfkn7a3W
-MY3y7XUIkA1TOyIRsH3k6F6NBWkvtXbwOUeLCJ14EvS8T9BqhIhPDZv8mQTRLDOD
-tQRyC4Cnw+UhYmnMFJhj6N2jpTBv/AdoKcRC56uBJyPW+dxj6i4e7n3pQuxqRvpI
-LLJJsskCgYEA4QQxzuJizLKV75rE+Qxg0Ej0Gid1aj3H5eeTZOUhm9KC8KDfPdpk
-msKaNzJq/VDcqHPluGS1jYZVgZlal1nk5xKBcbQ4n297VPVd+sLtlf0bj4atlDUO
-+iOVo0H7k5yWvj+TzVRlc5zjDLcnQh8i+22o3+65hIrb2zpzg/cCZJ8CgYEA3CJX
-bjmWPQ0uZVIa8Wz8cJFtKT9uVl7Z3/f6HjN9I0b/9MmVlNxQVAilVwhDkzR/UawG
-QeRFBJ6XWRwX0aoMq+O9VSNu/R2rtEMpIYt3LwbI3yw6GRoCdB5qeL820O+KX5Fl
-/z+ZNgrHgA1yKPVf+8ke2ZtLEqPHMN+BMuq8t+UCgYEAy0MfvzQPbbuw55WWcyb0
-WZJdNzcHwKX4ajzrj4vP9VOPRtD7eINMt+QsrMnVjei6u0yeahhHTIXZvc2K4Qeq
-V/YGinDzaUqqTU+synXFauUOPXO6XxQi6GC2rphPKsOcBFWoLSYc0vgYvgbA5uD7
-l8Yyc77RROKuwfWmHcJHHh8CgYBurGFSjGdJWHgr/oSHPqkIG0VLiJV7nQJjBPRd
-/Lr8YnTK6BJpHf7Q0Ov3frMirjEYqakXtaExel5TMbmT8q+eN8h3pnHlleY+oclr
-EQghv4J8GWs4NYhoQuZ6wH/ZuaTS+XHTS3FG51J3wcrUZtET8ICvHNE4lNjPbH8z
-TysENQKBgHER1RtDFdz+O7mlWibrHk8JDgcVdZV/pBF+9cb7r/orkH9RLAHDlsAO
-tuSVaQmm5eqgaAxMamBXSyw1lir07byemyuEDg0mJ1rNUGsAY8P+LWr579gvKMme
-5gvrJr99JkBTV3z+TiL7dZa52eW00Ijqg2qcbHGpq3kXWWkbd8Tn
+MIIEowIBAAKCAQEAlfref4Ortq92sArc6qdeyhtIUcc5FaCaBfA2M1Yfkb/cpsUF
+tAv1PHUIoQI5GR2iAJ+PZUsjS5MFrZqkID3IpleHel7k2MdmoQ4sV2LY5qDksB+X
+UbaLyjwjSgz5FI/VajcDFtLgdVcZ4jCiOA52BagYBy/ZECoUKr2rOhsdF+qbRkQi
+2ArVcXhXGrup55GSbbq2/hzVecGjodLk5rKp57JStzYwkP39N9LzysTOXzqjlOWo
+1B6WRSemRZkt9tO+B5fpmaEU/xrW51bSIPgiV7Fk4Rd/y+IgSJr/q5GPTCl+X8jC
+yYJiCRuvEvdCEBkfHGdpWWMwtCe84zLGJTg2wwIDAQABAoIBAAEP7HYNNnDWdYMD
++WAtYM12X/W5s/wUP94juaBI4u4iZH2EZodlixEdZUCTXgq43WsDUhxX05s7cE+p
+H5DuSCHtoo2WHvGKAposwRDm2f3YVWQ2Xyb2ahNt69LYHHWrO+XQ60YYTa3r8Gn3
+7dFR3I016/jyn5DeEVaglvS1dfj2UG4ybR4KkMfcKd94X0rKvz3wzAhHIh+hwMtv
+sVk7V4vSnKf2mJXwIVECTolnEJEkCjWjjymgUJYKT8yN7JnAsHRcvMa6kWwIGrLp
+oQCEaJwYM6ynCRS989pLt3vA2iu5VkYhiHXJ9Ds/5b5yzhzmj+ymzKbFKrrUUrmn
++2Jp1K0CgYEAw8BchALsD/+JuoXjinA14MH7PZjIsXyhtPk+c4pk42iMNyg1J8XF
+Y/ITepLYsl2bZqQI1jOJdDqsTwIsva9r749lsmkYI3VOxhi7+qBK0sThR66C87lX
+iU2QpnZ9NloC6ort4a3MEvZ/gRQcXdBrNlNoza2p7PHAVDTnsdSrNKUCgYEAxCQV
+uo85oZyfnMufn/gcI9IeYOgiB0tO3a8cAFX2wQW1y935t6Z13ApUQc4EnCOH7ZBc
+td5kT+xGdRWnfPZ38FM1dd5MBdGE69s3q8pJDUExSgNLqaF6/5bD32qui66L3ugu
+eMjxrzqJsc2uQTPCs18SGsyRmf54DpY8HglOmUcCgYAGRDgx+a347SNJl1OrcOAo
+q80RMbzrAaRjmL8JD9se9I/YjC73cPtasbsx51WMkDaTWJj30nqJ//7YIKeyAtWf
+u6Vzyq19JRo6eTw7T7pVePwFQW7rwnks6hDBY3WqscL6IyxuVxP7X2zBgxVNY4ir
+Gox2WSLhdPPFPlRUewxoCQKBgAJvqE1u5fpZ5ame5dao0ECppXLyrymEB/C88g4X
+Az+WgJGNqkJbsO8QuccvdeMylcefmWcw4fIULzPZFwF4VjkH74wNPMh9t7buPBzI
+IGwnuSMAM3ph5RMzni8yNgTKIDaej6U0abwRcBBjS5zHtc1giusGS3CsNnWH7Cs7
+VlyVAoGBAK+prq9t9x3tC3NfCZH8/Wfs/X0T1qm11RiL5+tOhmbguWAqSSBy8OjX
+Yh8AOXrFuMGldcaTXxMeiKvI2cyybnls1MFsPoeV/fSMJbex7whdeJeTi66NOSKr
+oftUHvkHS0Vv/LicMEOufFGslb4T9aPJ7oyhoSlz9CfAutDWk/q/
 -----END RSA PRIVATE KEY-----`))
 	if err != nil {
 		t.Fatal(err)
@@ -599,7 +601,7 @@ tuSVaQmm5eqgaAxMamBXSyw1lir07byemyuEDg0mJ1rNUGsAY8P+LWr579gvKMme
 	client, _ := NewClient(config)
 	_, err = client.Info()
 
-	if err.Error() != `x509: “instance” certificate is not standards compliant` {
+	if errors.Unwrap(err).Error() != `x509: “instance” certificate is not standards compliant` {
 		if ok := errors.As(err, &x509.UnknownAuthorityError{}); !ok {
 			t.Fatalf("Uknown error, expected UnknownAuthorityError, got: %s", err)
 		}
@@ -607,7 +609,7 @@ tuSVaQmm5eqgaAxMamBXSyw1lir07byemyuEDg0mJ1rNUGsAY8P+LWr579gvKMme
 
 	// We add the fingerprint corresponding to testcert.LocalhostCert
 	//
-	config.CertificateFingerprint = "7A3A6031CD097DA0EE84D65137912A84576B50194045B41F4F4B8AC1A98116BE"
+	config.CertificateFingerprint = "1DBF91CA60E9B94E89582396C2C825466F4C449FAFB7BCA29157EE5D61D5C171"
 	client, _ = NewClient(config)
 	res, err := client.Info()
 	if err != nil {
@@ -846,7 +848,13 @@ func TestNewTypedClient(t *testing.T) {
 					Header:     http.Header{"X-Elastic-Product": []string{"Elasticsearch"}},
 					StatusCode: http.StatusOK,
 					Status:     "OK",
-					Body:       ioutil.NopCloser(strings.NewReader("")),
+					Body: ioutil.NopCloser(strings.NewReader(`{
+					  "version" : {
+						"number" : "8.0.0-SNAPSHOT",
+						"build_flavor" : "default"
+					  },
+					  "tagline" : "You Know, for Search"
+					}`)),
 				}, nil
 			},
 		},
@@ -859,7 +867,10 @@ func TestNewTypedClient(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
-	defer res.Body.Close()
+
+	if res.Tagline != "You Know, for Search" {
+		t.Fatal("unexpected tagline")
+	}
 
 	_, err = NewClient(Config{})
 	if err != nil {
@@ -958,4 +969,301 @@ func TestContentTypeOverride(t *testing.T) {
 		search.Header.Set("Content-Type", contentType)
 		search.Do(context.Background(), tp)
 	})
+}
+
+type FakeInstrumentation struct {
+	Error error
+
+	Name                string
+	Closed              bool
+	ClusterID           string
+	NodeName            string
+	PathParts           map[string]string
+	PersistQuery        bool
+	QueryEndpoint       string
+	Query               string
+	BeforeRequestFunc   func(r *http.Request, endpoint string) bool
+	BeforeRequestResult bool
+	AfterRequestFunc    func(r *http.Request, system, endpoint string) bool
+	AfterRequestResult  bool
+}
+
+func NewFakeInstrumentation(recordQuery bool) *FakeInstrumentation {
+	return &FakeInstrumentation{
+		PersistQuery: recordQuery,
+		PathParts:    make(map[string]string),
+	}
+}
+
+func (c *FakeInstrumentation) Start(ctx context.Context, name string) context.Context {
+	c.Name = name
+	return ctx
+}
+
+func (c *FakeInstrumentation) Close(ctx context.Context) {
+	c.Closed = true
+}
+
+func (c *FakeInstrumentation) RecordError(ctx context.Context, err error) {
+	c.Error = err
+}
+
+func (c *FakeInstrumentation) AfterResponse(ctx context.Context, res *http.Response) {
+	if id := res.Header.Get("X-Found-Handling-Cluster"); id != "" {
+		c.ClusterID = id
+	}
+	if name := res.Header.Get("X-Found-Handling-Instance"); name != "" {
+		c.NodeName = name
+	}
+}
+
+func (c *FakeInstrumentation) RecordPathPart(ctx context.Context, pathPart, value string) {
+	c.PathParts[pathPart] = value
+}
+
+func (c *FakeInstrumentation) RecordRequestBody(ctx context.Context, endpoint string, query io.Reader) io.ReadCloser {
+	c.QueryEndpoint = endpoint
+	if !c.PersistQuery {
+		return nil
+	}
+
+	buf := bytes.Buffer{}
+	buf.ReadFrom(query)
+	c.Query = buf.String()
+	return io.NopCloser(&buf)
+}
+
+func (c *FakeInstrumentation) BeforeRequest(req *http.Request, endpoint string) {
+	if c.BeforeRequestFunc != nil {
+		c.BeforeRequestResult = c.BeforeRequestFunc(req, endpoint)
+	}
+}
+
+func (c *FakeInstrumentation) AfterRequest(req *http.Request, system, endpoint string) {
+	if c.AfterRequestFunc != nil {
+		c.AfterRequestResult = c.AfterRequestFunc(req, system, endpoint)
+	}
+}
+
+func TestInstrumentation(t *testing.T) {
+	successTp := func(request *http.Request) (*http.Response, error) {
+		h := http.Header{}
+		h.Add("X-Elastic-Product", "Elasticsearch")
+		h.Add("X-Found-Handling-Cluster", "foo-bar-cluster-id")
+		h.Add("X-Found-Handling-Instance", "0123456789")
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     h,
+			Body:       io.NopCloser(strings.NewReader(`{}`)),
+		}, nil
+	}
+
+	errorTp := func(request *http.Request) (*http.Response, error) {
+		h := http.Header{}
+		h.Add("X-Elastic-Product", "Elasticsearch")
+		h.Add("X-Found-Handling-Cluster", "foo-bar-cluster-id")
+		h.Add("X-Found-Handling-Instance", "0123456789")
+		return &http.Response{
+			StatusCode: http.StatusNotFound,
+			Header:     h,
+			Body: io.NopCloser(strings.NewReader(`{
+  "error": {
+    "root_cause": [
+      {
+        "type": "index_not_found_exception",
+        "reason": "no such index [foo]",
+        "resource.type": "index_or_alias",
+        "resource.id": "foo",
+        "index_uuid": "_na_",
+        "index": "foo"
+      }
+    ],
+    "type": "index_not_found_exception",
+    "reason": "no such index [foo]",
+    "resource.type": "index_or_alias",
+    "resource.id": "foo",
+    "index_uuid": "_na_",
+    "index": "foo"
+  },
+  "status": 404
+}`)),
+		}, nil
+	}
+
+	reason := "index_not_found_exception"
+
+	type args struct {
+		roundTripFunc   func(request *http.Request) (*http.Response, error)
+		instrumentation *FakeInstrumentation
+	}
+	tests := []struct {
+		name string
+		args args
+		want *FakeInstrumentation
+	}{
+		{
+			name: "with query",
+			args: args{
+				successTp,
+				NewFakeInstrumentation(true),
+			},
+			want: &FakeInstrumentation{
+				Name:                "search",
+				Closed:              true,
+				ClusterID:           "foo-bar-cluster-id",
+				NodeName:            "0123456789",
+				PathParts:           map[string]string{"index": "foo"},
+				PersistQuery:        true,
+				QueryEndpoint:       "search",
+				Query:               "{\"query\":{\"match_all\":{}}}",
+				BeforeRequestResult: true,
+				AfterRequestResult:  true,
+				BeforeRequestFunc: func(r *http.Request, endpoint string) bool {
+					if r != nil {
+						if r.URL.Path != "/foo/_search" {
+							return false
+						}
+						if r.Method != http.MethodPost {
+							return false
+						}
+					}
+
+					return true
+				},
+				AfterRequestFunc: func(r *http.Request, system, endpoint string) bool {
+					if r != nil {
+						if r.URL.Path != "/foo/_search" {
+							return false
+						}
+						if r.Method != http.MethodPost {
+							return false
+						}
+					}
+					return true
+				},
+			},
+		},
+		{
+			name: "without query",
+			args: args{
+				successTp,
+				NewFakeInstrumentation(false),
+			},
+			want: &FakeInstrumentation{
+				Name:                "search",
+				Closed:              true,
+				ClusterID:           "foo-bar-cluster-id",
+				NodeName:            "0123456789",
+				PathParts:           map[string]string{"index": "foo"},
+				PersistQuery:        true,
+				QueryEndpoint:       "search",
+				Query:               "",
+				BeforeRequestResult: true,
+				AfterRequestResult:  true,
+				BeforeRequestFunc:   func(r *http.Request, endpoint string) bool { return true },
+				AfterRequestFunc:    func(r *http.Request, system, endpoint string) bool { return true },
+			},
+		},
+		{
+			name: "with error",
+			args: args{
+				errorTp,
+				NewFakeInstrumentation(false),
+			},
+			want: &FakeInstrumentation{
+				Name:                "search",
+				Closed:              true,
+				ClusterID:           "foo-bar-cluster-id",
+				NodeName:            "0123456789",
+				PathParts:           map[string]string{"index": "foo"},
+				PersistQuery:        true,
+				QueryEndpoint:       "search",
+				Query:               "",
+				BeforeRequestResult: true,
+				AfterRequestResult:  true,
+				BeforeRequestFunc:   func(r *http.Request, endpoint string) bool { return true },
+				AfterRequestFunc:    func(r *http.Request, system, endpoint string) bool { return true },
+				Error:               &types.ElasticsearchError{Status: http.StatusNotFound, ErrorCause: types.ErrorCause{Type: reason}},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Run("typed client", func(t *testing.T) {
+				instrument := test.args.instrumentation
+				instrument.BeforeRequestFunc = test.want.BeforeRequestFunc
+				instrument.AfterRequestFunc = test.want.AfterRequestFunc
+
+				es, _ := NewTypedClient(Config{
+					Transport:       &mockTransp{RoundTripFunc: test.args.roundTripFunc},
+					Instrumentation: instrument,
+				})
+				es.Search().
+					Index("foo").
+					Query(&types.Query{
+						MatchAll: types.NewMatchAllQuery(),
+					}).
+					Do(context.Background())
+
+				if test.want.Error != nil {
+					if !errors.Is(instrument.Error, test.want.Error) {
+						t.Error("ploup")
+					}
+				}
+
+				if instrument.BeforeRequestResult != test.want.BeforeRequestResult ||
+					instrument.AfterRequestResult != test.want.AfterRequestResult ||
+					instrument.Name != test.want.Name ||
+					instrument.Query != test.want.Query ||
+					instrument.QueryEndpoint != test.want.QueryEndpoint ||
+					instrument.NodeName != test.want.NodeName ||
+					instrument.ClusterID != test.want.ClusterID ||
+					instrument.Closed == false {
+					t.Errorf("instrument didn't record the expected values:\ngot:  %#v\nwant: %#v", instrument, test.want)
+				}
+
+				if !reflect.DeepEqual(instrument.PathParts, test.want.PathParts) {
+					t.Errorf("path parts not within expected values, got: %#v, want: %#v", instrument.PathParts, test.want.PathParts)
+				}
+			})
+			t.Run("low-level client", func(t *testing.T) {
+				instrument := test.args.instrumentation
+				instrument.BeforeRequestFunc = test.want.BeforeRequestFunc
+				instrument.AfterRequestFunc = test.want.AfterRequestFunc
+
+				es, _ := NewClient(Config{
+					Transport:       &mockTransp{RoundTripFunc: test.args.roundTripFunc},
+					Instrumentation: instrument,
+				})
+				es.Search(
+					es.Search.WithIndex("foo"),
+					es.Search.WithBody(strings.NewReader("{\"query\":{\"match_all\":{}}}")),
+					es.Search.WithContext(context.Background()),
+				)
+
+				if test.want.Error != nil {
+					if !errors.Is(instrument.Error, test.want.Error) {
+						t.Error("ploup")
+					}
+				}
+
+				if instrument.BeforeRequestResult != test.want.BeforeRequestResult ||
+					instrument.AfterRequestResult != test.want.AfterRequestResult ||
+					instrument.Name != test.want.Name ||
+					instrument.Query != test.want.Query ||
+					instrument.QueryEndpoint != test.want.QueryEndpoint ||
+					instrument.NodeName != test.want.NodeName ||
+					instrument.ClusterID != test.want.ClusterID ||
+					instrument.Closed == false {
+					t.Errorf("instrument didn't record the expected values:\ngot:  %#v\nwant: %#v", instrument, test.want)
+				}
+
+				if !reflect.DeepEqual(instrument.PathParts, test.want.PathParts) {
+					t.Errorf("path parts not within expected values, got: %#v, want: %#v", instrument.PathParts, test.want.PathParts)
+				}
+			})
+		})
+	}
+
 }

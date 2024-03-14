@@ -15,20 +15,105 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // WeightedAverageValue type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/metric.ts#L218-L222
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/metric.ts#L448-L458
 type WeightedAverageValue struct {
-	Field   *string  `json:"field,omitempty"`
-	Missing *float64 `json:"missing,omitempty"`
-	Script  *Script  `json:"script,omitempty"`
+	// Field The field from which to extract the values or weights.
+	Field *string `json:"field,omitempty"`
+	// Missing A value or weight to use if the field is missing.
+	Missing *Float64 `json:"missing,omitempty"`
+	Script  Script   `json:"script,omitempty"`
+}
+
+func (s *WeightedAverageValue) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "field":
+			if err := dec.Decode(&s.Field); err != nil {
+				return err
+			}
+
+		case "missing":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.Missing = &f
+			case float64:
+				f := Float64(v)
+				s.Missing = &f
+			}
+
+		case "script":
+			message := json.RawMessage{}
+			if err := dec.Decode(&message); err != nil {
+				return err
+			}
+			keyDec := json.NewDecoder(bytes.NewReader(message))
+			for {
+				t, err := keyDec.Token()
+				if err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+					return err
+				}
+
+				switch t {
+
+				case "lang", "options", "source":
+					o := NewInlineScript()
+					localDec := json.NewDecoder(bytes.NewReader(message))
+					if err := localDec.Decode(&o); err != nil {
+						return err
+					}
+					s.Script = o
+
+				case "id":
+					o := NewStoredScriptId()
+					localDec := json.NewDecoder(bytes.NewReader(message))
+					if err := localDec.Decode(&o); err != nil {
+						return err
+					}
+					s.Script = o
+
+				}
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewWeightedAverageValue returns a WeightedAverageValue.

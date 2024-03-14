@@ -15,23 +15,123 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // IntervalsMatch type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/query_dsl/fulltext.ts#L99-L108
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/query_dsl/fulltext.ts#L186-L216
 type IntervalsMatch struct {
-	Analyzer *string          `json:"analyzer,omitempty"`
-	Filter   *IntervalsFilter `json:"filter,omitempty"`
-	MaxGaps  *int             `json:"max_gaps,omitempty"`
-	Ordered  *bool            `json:"ordered,omitempty"`
-	Query    string           `json:"query"`
-	UseField *string          `json:"use_field,omitempty"`
+	// Analyzer Analyzer used to analyze terms in the query.
+	Analyzer *string `json:"analyzer,omitempty"`
+	// Filter An optional interval filter.
+	Filter *IntervalsFilter `json:"filter,omitempty"`
+	// MaxGaps Maximum number of positions between the matching terms.
+	// Terms further apart than this are not considered matches.
+	MaxGaps *int `json:"max_gaps,omitempty"`
+	// Ordered If `true`, matching terms must appear in their specified order.
+	Ordered *bool `json:"ordered,omitempty"`
+	// Query Text you wish to find in the provided field.
+	Query string `json:"query"`
+	// UseField If specified, match intervals from this field rather than the top-level
+	// field.
+	// The `term` is normalized using the search analyzer from this field, unless
+	// `analyzer` is specified separately.
+	UseField *string `json:"use_field,omitempty"`
+}
+
+func (s *IntervalsMatch) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "analyzer":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Analyzer = &o
+
+		case "filter":
+			if err := dec.Decode(&s.Filter); err != nil {
+				return err
+			}
+
+		case "max_gaps":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.MaxGaps = &value
+			case float64:
+				f := int(v)
+				s.MaxGaps = &f
+			}
+
+		case "ordered":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Ordered = &value
+			case bool:
+				s.Ordered = &v
+			}
+
+		case "query":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Query = o
+
+		case "use_field":
+			if err := dec.Decode(&s.UseField); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewIntervalsMatch returns a IntervalsMatch.

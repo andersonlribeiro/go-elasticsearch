@@ -15,28 +15,96 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // LimitTokenCountTokenFilter type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/analysis/token_filters.ts#L248-L252
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/analysis/token_filters.ts#L249-L253
 type LimitTokenCountTokenFilter struct {
-	ConsumeAllTokens *bool   `json:"consume_all_tokens,omitempty"`
-	MaxTokenCount    *int    `json:"max_token_count,omitempty"`
-	Type             string  `json:"type,omitempty"`
-	Version          *string `json:"version,omitempty"`
+	ConsumeAllTokens *bool              `json:"consume_all_tokens,omitempty"`
+	MaxTokenCount    Stringifiedinteger `json:"max_token_count,omitempty"`
+	Type             string             `json:"type,omitempty"`
+	Version          *string            `json:"version,omitempty"`
+}
+
+func (s *LimitTokenCountTokenFilter) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "consume_all_tokens":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.ConsumeAllTokens = &value
+			case bool:
+				s.ConsumeAllTokens = &v
+			}
+
+		case "max_token_count":
+			if err := dec.Decode(&s.MaxTokenCount); err != nil {
+				return err
+			}
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		case "version":
+			if err := dec.Decode(&s.Version); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
+// MarshalJSON override marshalling to include literal value
+func (s LimitTokenCountTokenFilter) MarshalJSON() ([]byte, error) {
+	type innerLimitTokenCountTokenFilter LimitTokenCountTokenFilter
+	tmp := innerLimitTokenCountTokenFilter{
+		ConsumeAllTokens: s.ConsumeAllTokens,
+		MaxTokenCount:    s.MaxTokenCount,
+		Type:             s.Type,
+		Version:          s.Version,
+	}
+
+	tmp.Type = "limit"
+
+	return json.Marshal(tmp)
 }
 
 // NewLimitTokenCountTokenFilter returns a LimitTokenCountTokenFilter.
 func NewLimitTokenCountTokenFilter() *LimitTokenCountTokenFilter {
 	r := &LimitTokenCountTokenFilter{}
-
-	r.Type = "limit"
 
 	return r
 }

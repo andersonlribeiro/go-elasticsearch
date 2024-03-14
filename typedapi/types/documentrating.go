@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // DocumentRating type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/rank_eval/types.ts#L116-L123
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/rank_eval/types.ts#L116-L123
 type DocumentRating struct {
 	// Id_ The document ID.
 	Id_ string `json:"_id"`
@@ -33,6 +39,52 @@ type DocumentRating struct {
 	Index_ string `json:"_index"`
 	// Rating The document’s relevance with regard to this search request.
 	Rating int `json:"rating"`
+}
+
+func (s *DocumentRating) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "_id":
+			if err := dec.Decode(&s.Id_); err != nil {
+				return err
+			}
+
+		case "_index":
+			if err := dec.Decode(&s.Index_); err != nil {
+				return err
+			}
+
+		case "rating":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Rating = value
+			case float64:
+				f := int(v)
+				s.Rating = f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewDocumentRating returns a DocumentRating.

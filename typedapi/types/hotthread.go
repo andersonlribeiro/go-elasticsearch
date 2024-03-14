@@ -15,21 +15,66 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // HotThread type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/hot_threads/types.ts#L23-L28
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/hot_threads/types.ts#L23-L28
 type HotThread struct {
 	Hosts    []string `json:"hosts"`
 	NodeId   string   `json:"node_id"`
 	NodeName string   `json:"node_name"`
 	Threads  []string `json:"threads"`
+}
+
+func (s *HotThread) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "hosts":
+			if err := dec.Decode(&s.Hosts); err != nil {
+				return err
+			}
+
+		case "node_id":
+			if err := dec.Decode(&s.NodeId); err != nil {
+				return err
+			}
+
+		case "node_name":
+			if err := dec.Decode(&s.NodeName); err != nil {
+				return err
+			}
+
+		case "threads":
+			if err := dec.Decode(&s.Threads); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewHotThread returns a HotThread.

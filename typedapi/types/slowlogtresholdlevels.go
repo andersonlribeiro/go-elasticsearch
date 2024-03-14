@@ -15,21 +15,66 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // SlowlogTresholdLevels type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/IndexSettings.ts#L490-L495
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/IndexSettings.ts#L487-L492
 type SlowlogTresholdLevels struct {
-	Debug *Duration `json:"debug,omitempty"`
-	Info  *Duration `json:"info,omitempty"`
-	Trace *Duration `json:"trace,omitempty"`
-	Warn  *Duration `json:"warn,omitempty"`
+	Debug Duration `json:"debug,omitempty"`
+	Info  Duration `json:"info,omitempty"`
+	Trace Duration `json:"trace,omitempty"`
+	Warn  Duration `json:"warn,omitempty"`
+}
+
+func (s *SlowlogTresholdLevels) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "debug":
+			if err := dec.Decode(&s.Debug); err != nil {
+				return err
+			}
+
+		case "info":
+			if err := dec.Decode(&s.Info); err != nil {
+				return err
+			}
+
+		case "trace":
+			if err := dec.Decode(&s.Trace); err != nil {
+				return err
+			}
+
+		case "warn":
+			if err := dec.Decode(&s.Warn); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewSlowlogTresholdLevels returns a SlowlogTresholdLevels.

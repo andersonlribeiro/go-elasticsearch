@@ -15,22 +15,87 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // CurrentNode type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/cluster/allocation_explain/types.ts#L78-L84
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/cluster/allocation_explain/types.ts#L78-L84
 type CurrentNode struct {
 	Attributes       map[string]string `json:"attributes"`
 	Id               string            `json:"id"`
 	Name             string            `json:"name"`
 	TransportAddress string            `json:"transport_address"`
 	WeightRanking    int               `json:"weight_ranking"`
+}
+
+func (s *CurrentNode) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "attributes":
+			if s.Attributes == nil {
+				s.Attributes = make(map[string]string, 0)
+			}
+			if err := dec.Decode(&s.Attributes); err != nil {
+				return err
+			}
+
+		case "id":
+			if err := dec.Decode(&s.Id); err != nil {
+				return err
+			}
+
+		case "name":
+			if err := dec.Decode(&s.Name); err != nil {
+				return err
+			}
+
+		case "transport_address":
+			if err := dec.Decode(&s.TransportAddress); err != nil {
+				return err
+			}
+
+		case "weight_ranking":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.WeightRanking = value
+			case float64:
+				f := int(v)
+				s.WeightRanking = f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewCurrentNode returns a CurrentNode.

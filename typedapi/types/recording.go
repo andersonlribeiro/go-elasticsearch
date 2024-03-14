@@ -15,21 +15,84 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // Recording type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/_types/Stats.ts#L88-L93
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/_types/Stats.ts#L225-L230
 type Recording struct {
-	CumulativeExecutionCount      *int64    `json:"cumulative_execution_count,omitempty"`
-	CumulativeExecutionTime       *Duration `json:"cumulative_execution_time,omitempty"`
-	CumulativeExecutionTimeMillis *int64    `json:"cumulative_execution_time_millis,omitempty"`
-	Name                          *string   `json:"name,omitempty"`
+	CumulativeExecutionCount      *int64   `json:"cumulative_execution_count,omitempty"`
+	CumulativeExecutionTime       Duration `json:"cumulative_execution_time,omitempty"`
+	CumulativeExecutionTimeMillis *int64   `json:"cumulative_execution_time_millis,omitempty"`
+	Name                          *string  `json:"name,omitempty"`
+}
+
+func (s *Recording) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "cumulative_execution_count":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.CumulativeExecutionCount = &value
+			case float64:
+				f := int64(v)
+				s.CumulativeExecutionCount = &f
+			}
+
+		case "cumulative_execution_time":
+			if err := dec.Decode(&s.CumulativeExecutionTime); err != nil {
+				return err
+			}
+
+		case "cumulative_execution_time_millis":
+			if err := dec.Decode(&s.CumulativeExecutionTimeMillis); err != nil {
+				return err
+			}
+
+		case "name":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Name = &o
+
+		}
+	}
+	return nil
 }
 
 // NewRecording returns a Recording.

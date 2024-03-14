@@ -15,21 +15,92 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // ShardsSegment type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/segments/types.ts#L47-L52
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/segments/types.ts#L46-L51
 type ShardsSegment struct {
 	NumCommittedSegments int                 `json:"num_committed_segments"`
 	NumSearchSegments    int                 `json:"num_search_segments"`
 	Routing              ShardSegmentRouting `json:"routing"`
 	Segments             map[string]Segment  `json:"segments"`
+}
+
+func (s *ShardsSegment) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "num_committed_segments":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.NumCommittedSegments = value
+			case float64:
+				f := int(v)
+				s.NumCommittedSegments = f
+			}
+
+		case "num_search_segments":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.NumSearchSegments = value
+			case float64:
+				f := int(v)
+				s.NumSearchSegments = f
+			}
+
+		case "routing":
+			if err := dec.Decode(&s.Routing); err != nil {
+				return err
+			}
+
+		case "segments":
+			if s.Segments == nil {
+				s.Segments = make(map[string]Segment, 0)
+			}
+			if err := dec.Decode(&s.Segments); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewShardsSegment returns a ShardsSegment.

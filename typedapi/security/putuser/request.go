@@ -15,30 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package putuser
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
+
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // Request holds the request body struct for the package putuser
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/security/put_user/SecurityPutUserRequest.ts#L23-L45
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/security/put_user/SecurityPutUserRequest.ts#L23-L44
 type Request struct {
-	Email        string                 `json:"email,omitempty"`
-	Enabled      *bool                  `json:"enabled,omitempty"`
-	FullName     string                 `json:"full_name,omitempty"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
-	Password     *string                `json:"password,omitempty"`
-	PasswordHash *string                `json:"password_hash,omitempty"`
-	Roles        []string               `json:"roles,omitempty"`
-	Username     *string                `json:"username,omitempty"`
+	Email        string         `json:"email,omitempty"`
+	Enabled      *bool          `json:"enabled,omitempty"`
+	FullName     string         `json:"full_name,omitempty"`
+	Metadata     types.Metadata `json:"metadata,omitempty"`
+	Password     *string        `json:"password,omitempty"`
+	PasswordHash *string        `json:"password_hash,omitempty"`
+	Roles        []string       `json:"roles,omitempty"`
+	Username     *string        `json:"username,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -48,7 +52,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -57,4 +61,93 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "email":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Email = o
+
+		case "enabled":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Enabled = &value
+			case bool:
+				s.Enabled = &v
+			}
+
+		case "full_name":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.FullName = o
+
+		case "metadata":
+			if err := dec.Decode(&s.Metadata); err != nil {
+				return err
+			}
+
+		case "password":
+			if err := dec.Decode(&s.Password); err != nil {
+				return err
+			}
+
+		case "password_hash":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.PasswordHash = &o
+
+		case "roles":
+			if err := dec.Decode(&s.Roles); err != nil {
+				return err
+			}
+
+		case "username":
+			if err := dec.Decode(&s.Username); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }

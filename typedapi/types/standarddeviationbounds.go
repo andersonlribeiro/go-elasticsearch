@@ -15,23 +15,78 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // StandardDeviationBounds type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/Aggregate.ts#L259-L266
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/Aggregate.ts#L260-L267
 type StandardDeviationBounds struct {
-	Lower           float64 `json:"lower,omitempty"`
-	LowerPopulation float64 `json:"lower_population,omitempty"`
-	LowerSampling   float64 `json:"lower_sampling,omitempty"`
-	Upper           float64 `json:"upper,omitempty"`
-	UpperPopulation float64 `json:"upper_population,omitempty"`
-	UpperSampling   float64 `json:"upper_sampling,omitempty"`
+	Lower           Float64 `json:"lower,omitempty"`
+	LowerPopulation Float64 `json:"lower_population,omitempty"`
+	LowerSampling   Float64 `json:"lower_sampling,omitempty"`
+	Upper           Float64 `json:"upper,omitempty"`
+	UpperPopulation Float64 `json:"upper_population,omitempty"`
+	UpperSampling   Float64 `json:"upper_sampling,omitempty"`
+}
+
+func (s *StandardDeviationBounds) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "lower":
+			if err := dec.Decode(&s.Lower); err != nil {
+				return err
+			}
+
+		case "lower_population":
+			if err := dec.Decode(&s.LowerPopulation); err != nil {
+				return err
+			}
+
+		case "lower_sampling":
+			if err := dec.Decode(&s.LowerSampling); err != nil {
+				return err
+			}
+
+		case "upper":
+			if err := dec.Decode(&s.Upper); err != nil {
+				return err
+			}
+
+		case "upper_population":
+			if err := dec.Decode(&s.UpperPopulation); err != nil {
+				return err
+			}
+
+		case "upper_sampling":
+			if err := dec.Decode(&s.UpperSampling); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewStandardDeviationBounds returns a StandardDeviationBounds.

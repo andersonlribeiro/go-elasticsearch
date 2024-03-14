@@ -15,19 +15,77 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // HoltLinearModelSettings type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/pipeline.ts#L231-L234
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/pipeline.ts#L271-L274
 type HoltLinearModelSettings struct {
 	Alpha *float32 `json:"alpha,omitempty"`
 	Beta  *float32 `json:"beta,omitempty"`
+}
+
+func (s *HoltLinearModelSettings) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "alpha":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 32)
+				if err != nil {
+					return err
+				}
+				f := float32(value)
+				s.Alpha = &f
+			case float64:
+				f := float32(v)
+				s.Alpha = &f
+			}
+
+		case "beta":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 32)
+				if err != nil {
+					return err
+				}
+				f := float32(value)
+				s.Beta = &f
+			case float64:
+				f := float32(v)
+				s.Beta = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewHoltLinearModelSettings returns a HoltLinearModelSettings.

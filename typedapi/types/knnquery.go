@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // KnnQuery type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/Knn.ts#L24-L37
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/Knn.ts#L27-L49
 type KnnQuery struct {
 	// Boost Boost value to apply to kNN scores
 	Boost *float32 `json:"boost,omitempty"`
@@ -32,12 +38,137 @@ type KnnQuery struct {
 	Field string `json:"field"`
 	// Filter Filters for the kNN search query
 	Filter []Query `json:"filter,omitempty"`
+	// InnerHits If defined, each search hit will contain inner hits.
+	InnerHits *InnerHits `json:"inner_hits,omitempty"`
 	// K The final number of nearest neighbors to return as top hits
 	K int64 `json:"k"`
 	// NumCandidates The number of nearest neighbor candidates to consider per shard
 	NumCandidates int64 `json:"num_candidates"`
 	// QueryVector The query vector
-	QueryVector []float64 `json:"query_vector"`
+	QueryVector []float32 `json:"query_vector,omitempty"`
+	// QueryVectorBuilder The query vector builder. You must provide a query_vector_builder or
+	// query_vector, but not both.
+	QueryVectorBuilder *QueryVectorBuilder `json:"query_vector_builder,omitempty"`
+	// Similarity The minimum similarity for a vector to be considered a match
+	Similarity *float32 `json:"similarity,omitempty"`
+}
+
+func (s *KnnQuery) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "boost":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 32)
+				if err != nil {
+					return err
+				}
+				f := float32(value)
+				s.Boost = &f
+			case float64:
+				f := float32(v)
+				s.Boost = &f
+			}
+
+		case "field":
+			if err := dec.Decode(&s.Field); err != nil {
+				return err
+			}
+
+		case "filter":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := NewQuery()
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.Filter = append(s.Filter, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.Filter); err != nil {
+					return err
+				}
+			}
+
+		case "inner_hits":
+			if err := dec.Decode(&s.InnerHits); err != nil {
+				return err
+			}
+
+		case "k":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.K = value
+			case float64:
+				f := int64(v)
+				s.K = f
+			}
+
+		case "num_candidates":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.NumCandidates = value
+			case float64:
+				f := int64(v)
+				s.NumCandidates = f
+			}
+
+		case "query_vector":
+			if err := dec.Decode(&s.QueryVector); err != nil {
+				return err
+			}
+
+		case "query_vector_builder":
+			if err := dec.Decode(&s.QueryVectorBuilder); err != nil {
+				return err
+			}
+
+		case "similarity":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 32)
+				if err != nil {
+					return err
+				}
+				f := float32(value)
+				s.Similarity = &f
+			case float64:
+				f := float32(v)
+				s.Similarity = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewKnnQuery returns a KnnQuery.

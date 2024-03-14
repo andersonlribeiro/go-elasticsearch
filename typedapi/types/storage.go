@@ -15,20 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/storagetype"
 )
 
 // Storage type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/IndexSettings.ts#L497-L506
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/IndexSettings.ts#L494-L503
 type Storage struct {
 	// AllowMmap You can restrict the use of the mmapfs and the related hybridfs store type
 	// via the setting node.store.allow_mmap.
@@ -39,6 +43,45 @@ type Storage struct {
 	// of memory maps so you need disable the ability to use memory-mapping.
 	AllowMmap *bool                   `json:"allow_mmap,omitempty"`
 	Type      storagetype.StorageType `json:"type"`
+}
+
+func (s *Storage) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "allow_mmap":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.AllowMmap = &value
+			case bool:
+				s.AllowMmap = &v
+			}
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewStorage returns a Storage.

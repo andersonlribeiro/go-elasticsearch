@@ -15,20 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/holtwinterstype"
 )
 
 // HoltWintersModelSettings type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/pipeline.ts#L235-L242
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/pipeline.ts#L275-L282
 type HoltWintersModelSettings struct {
 	Alpha  *float32                         `json:"alpha,omitempty"`
 	Beta   *float32                         `json:"beta,omitempty"`
@@ -36,6 +40,109 @@ type HoltWintersModelSettings struct {
 	Pad    *bool                            `json:"pad,omitempty"`
 	Period *int                             `json:"period,omitempty"`
 	Type   *holtwinterstype.HoltWintersType `json:"type,omitempty"`
+}
+
+func (s *HoltWintersModelSettings) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "alpha":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 32)
+				if err != nil {
+					return err
+				}
+				f := float32(value)
+				s.Alpha = &f
+			case float64:
+				f := float32(v)
+				s.Alpha = &f
+			}
+
+		case "beta":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 32)
+				if err != nil {
+					return err
+				}
+				f := float32(value)
+				s.Beta = &f
+			case float64:
+				f := float32(v)
+				s.Beta = &f
+			}
+
+		case "gamma":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 32)
+				if err != nil {
+					return err
+				}
+				f := float32(value)
+				s.Gamma = &f
+			case float64:
+				f := float32(v)
+				s.Gamma = &f
+			}
+
+		case "pad":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Pad = &value
+			case bool:
+				s.Pad = &v
+			}
+
+		case "period":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Period = &value
+			case float64:
+				f := int(v)
+				s.Period = &f
+			}
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewHoltWintersModelSettings returns a HoltWintersModelSettings.

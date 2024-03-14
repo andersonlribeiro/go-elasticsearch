@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
@@ -30,17 +28,5 @@ package types
 //	HoltMovingAverageAggregation
 //	HoltWintersMovingAverageAggregation
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/pipeline.ts#L188-L194
-type MovingAverageAggregation interface {
-	isMovingAverageAggregation()
-}
-
-func (i LinearMovingAverageAggregation) isMovingAverageAggregation() {}
-
-func (i SimpleMovingAverageAggregation) isMovingAverageAggregation() {}
-
-func (i EwmaMovingAverageAggregation) isMovingAverageAggregation() {}
-
-func (i HoltMovingAverageAggregation) isMovingAverageAggregation() {}
-
-func (i HoltWintersMovingAverageAggregation) isMovingAverageAggregation() {}
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/pipeline.ts#L228-L234
+type MovingAverageAggregation interface{}

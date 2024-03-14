@@ -15,22 +15,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 // Intervals type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/query_dsl/fulltext.ts#L63-L72
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/query_dsl/fulltext.ts#L83-L110
 type Intervals struct {
-	AllOf    *IntervalsAllOf    `json:"all_of,omitempty"`
-	AnyOf    *IntervalsAnyOf    `json:"any_of,omitempty"`
-	Fuzzy    *IntervalsFuzzy    `json:"fuzzy,omitempty"`
-	Match    *IntervalsMatch    `json:"match,omitempty"`
-	Prefix   *IntervalsPrefix   `json:"prefix,omitempty"`
+	// AllOf Returns matches that span a combination of other rules.
+	AllOf *IntervalsAllOf `json:"all_of,omitempty"`
+	// AnyOf Returns intervals produced by any of its sub-rules.
+	AnyOf *IntervalsAnyOf `json:"any_of,omitempty"`
+	// Fuzzy Matches analyzed text.
+	Fuzzy *IntervalsFuzzy `json:"fuzzy,omitempty"`
+	// Match Matches analyzed text.
+	Match *IntervalsMatch `json:"match,omitempty"`
+	// Prefix Matches terms that start with a specified set of characters.
+	Prefix *IntervalsPrefix `json:"prefix,omitempty"`
+	// Wildcard Matches terms using a wildcard pattern.
 	Wildcard *IntervalsWildcard `json:"wildcard,omitempty"`
 }
 

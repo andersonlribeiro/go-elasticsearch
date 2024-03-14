@@ -15,26 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"encoding/json"
+)
+
 // AutoscalingPolicy type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/autoscaling/_types/AutoscalingPolicy.ts#L23-L27
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/autoscaling/_types/AutoscalingPolicy.ts#L23-L27
 type AutoscalingPolicy struct {
 	// Deciders Decider settings
-	Deciders map[string]interface{} `json:"deciders"`
-	Roles    []string               `json:"roles"`
+	Deciders map[string]json.RawMessage `json:"deciders"`
+	Roles    []string                   `json:"roles"`
 }
 
 // NewAutoscalingPolicy returns a AutoscalingPolicy.
 func NewAutoscalingPolicy() *AutoscalingPolicy {
 	r := &AutoscalingPolicy{
-		Deciders: make(map[string]interface{}, 0),
+		Deciders: make(map[string]json.RawMessage, 0),
 	}
 
 	return r

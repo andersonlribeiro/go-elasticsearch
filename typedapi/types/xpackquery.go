@@ -15,21 +15,111 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // XpackQuery type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/xpack/usage/types.ts#L244-L249
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/xpack/usage/types.ts#L259-L264
 type XpackQuery struct {
 	Count  *int `json:"count,omitempty"`
 	Failed *int `json:"failed,omitempty"`
 	Paging *int `json:"paging,omitempty"`
 	Total  *int `json:"total,omitempty"`
+}
+
+func (s *XpackQuery) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Count = &value
+			case float64:
+				f := int(v)
+				s.Count = &f
+			}
+
+		case "failed":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Failed = &value
+			case float64:
+				f := int(v)
+				s.Failed = &f
+			}
+
+		case "paging":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Paging = &value
+			case float64:
+				f := int(v)
+				s.Paging = &f
+			}
+
+		case "total":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Total = &value
+			case float64:
+				f := int(v)
+				s.Total = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewXpackQuery returns a XpackQuery.

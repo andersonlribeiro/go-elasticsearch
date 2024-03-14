@@ -15,22 +15,65 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // NerInferenceUpdateOptions type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/inference.ts#L357-L362
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/inference.ts#L404-L409
 type NerInferenceUpdateOptions struct {
 	// ResultsField The field that is added to incoming documents to contain the inference
 	// prediction. Defaults to predicted_value.
 	ResultsField *string `json:"results_field,omitempty"`
 	// Tokenization The tokenization options to update when inferring
 	Tokenization *NlpTokenizationUpdateOptions `json:"tokenization,omitempty"`
+}
+
+func (s *NerInferenceUpdateOptions) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "results_field":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.ResultsField = &o
+
+		case "tokenization":
+			if err := dec.Decode(&s.Tokenization); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewNerInferenceUpdateOptions returns a NerInferenceUpdateOptions.

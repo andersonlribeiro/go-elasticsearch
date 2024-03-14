@@ -15,19 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 // IoStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/_types/Stats.ts#L287-L290
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/_types/Stats.ts#L718-L728
 type IoStats struct {
+	// Devices Array of disk metrics for each device that is backing an Elasticsearch data
+	// path.
+	// These disk metrics are probed periodically and averages between the last
+	// probe and the current probe are computed.
 	Devices []IoStatDevice `json:"devices,omitempty"`
-	Total   *IoStatDevice  `json:"total,omitempty"`
+	// Total The sum of the disk metrics for all devices that back an Elasticsearch data
+	// path.
+	Total *IoStatDevice `json:"total,omitempty"`
 }
 
 // NewIoStats returns a IoStats.

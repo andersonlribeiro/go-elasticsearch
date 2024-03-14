@@ -15,23 +15,119 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"strconv"
+)
+
 // NodeInfoDiscover type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/info/types.ts#L169-L171
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/info/types.ts#L173-L179
 type NodeInfoDiscover struct {
-	SeedHosts string `json:"seed_hosts"`
+	NodeInfoDiscover map[string]json.RawMessage `json:"-"`
+	SeedHosts        []string                   `json:"seed_hosts,omitempty"`
+	SeedProviders    []string                   `json:"seed_providers,omitempty"`
+	Type             *string                    `json:"type,omitempty"`
+}
+
+func (s *NodeInfoDiscover) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "seed_hosts":
+			if err := dec.Decode(&s.SeedHosts); err != nil {
+				return err
+			}
+
+		case "seed_providers":
+			if err := dec.Decode(&s.SeedProviders); err != nil {
+				return err
+			}
+
+		case "type":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Type = &o
+
+		default:
+
+			if key, ok := t.(string); ok {
+				if s.NodeInfoDiscover == nil {
+					s.NodeInfoDiscover = make(map[string]json.RawMessage, 0)
+				}
+				raw := new(json.RawMessage)
+				if err := dec.Decode(&raw); err != nil {
+					return err
+				}
+				s.NodeInfoDiscover[key] = *raw
+			}
+
+		}
+	}
+	return nil
+}
+
+// MarhsalJSON overrides marshalling for types with additional properties
+func (s NodeInfoDiscover) MarshalJSON() ([]byte, error) {
+	type opt NodeInfoDiscover
+	// We transform the struct to a map without the embedded additional properties map
+	tmp := make(map[string]interface{}, 0)
+
+	data, err := json.Marshal(opt(s))
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(data, &tmp)
+	if err != nil {
+		return nil, err
+	}
+
+	// We inline the additional fields from the underlying map
+	for key, value := range s.NodeInfoDiscover {
+		tmp[fmt.Sprintf("%s", key)] = value
+	}
+	delete(tmp, "NodeInfoDiscover")
+
+	data, err = json.Marshal(tmp)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 // NewNodeInfoDiscover returns a NodeInfoDiscover.
 func NewNodeInfoDiscover() *NodeInfoDiscover {
-	r := &NodeInfoDiscover{}
+	r := &NodeInfoDiscover{
+		NodeInfoDiscover: make(map[string]json.RawMessage, 0),
+	}
 
 	return r
 }

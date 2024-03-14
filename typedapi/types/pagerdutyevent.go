@@ -15,20 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/pagerdutyeventtype"
 )
 
 // PagerDutyEvent type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/watcher/_types/Actions.ts#L40-L52
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/watcher/_types/Actions.ts#L40-L52
 type PagerDutyEvent struct {
 	Account       *string                                `json:"account,omitempty"`
 	AttachPayload bool                                   `json:"attach_payload"`
@@ -39,6 +43,115 @@ type PagerDutyEvent struct {
 	EventType     *pagerdutyeventtype.PagerDutyEventType `json:"event_type,omitempty"`
 	IncidentKey   string                                 `json:"incident_key"`
 	Proxy         *PagerDutyEventProxy                   `json:"proxy,omitempty"`
+}
+
+func (s *PagerDutyEvent) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "account":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Account = &o
+
+		case "attach_payload":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.AttachPayload = value
+			case bool:
+				s.AttachPayload = v
+			}
+
+		case "client":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Client = &o
+
+		case "client_url":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.ClientUrl = &o
+
+		case "contexts", "context":
+			if err := dec.Decode(&s.Contexts); err != nil {
+				return err
+			}
+
+		case "description":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Description = o
+
+		case "event_type":
+			if err := dec.Decode(&s.EventType); err != nil {
+				return err
+			}
+
+		case "incident_key":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.IncidentKey = o
+
+		case "proxy":
+			if err := dec.Decode(&s.Proxy); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewPagerDutyEvent returns a PagerDutyEvent.

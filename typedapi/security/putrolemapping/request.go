@@ -15,29 +15,32 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package putrolemapping
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // Request holds the request body struct for the package putrolemapping
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/security/put_role_mapping/SecurityPutRoleMappingRequest.ts#L24-L43
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/security/put_role_mapping/SecurityPutRoleMappingRequest.ts#L25-L45
 type Request struct {
-	Enabled  *bool                  `json:"enabled,omitempty"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
-	Roles    []string               `json:"roles,omitempty"`
-	Rules    *types.RoleMappingRule `json:"rules,omitempty"`
-	RunAs    []string               `json:"run_as,omitempty"`
+	Enabled       *bool                  `json:"enabled,omitempty"`
+	Metadata      types.Metadata         `json:"metadata,omitempty"`
+	RoleTemplates []types.RoleTemplate   `json:"role_templates,omitempty"`
+	Roles         []string               `json:"roles,omitempty"`
+	Rules         *types.RoleMappingRule `json:"rules,omitempty"`
+	RunAs         []string               `json:"run_as,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -47,7 +50,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -56,4 +59,62 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "enabled":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Enabled = &value
+			case bool:
+				s.Enabled = &v
+			}
+
+		case "metadata":
+			if err := dec.Decode(&s.Metadata); err != nil {
+				return err
+			}
+
+		case "role_templates":
+			if err := dec.Decode(&s.RoleTemplates); err != nil {
+				return err
+			}
+
+		case "roles":
+			if err := dec.Decode(&s.Roles); err != nil {
+				return err
+			}
+
+		case "rules":
+			if err := dec.Decode(&s.Rules); err != nil {
+				return err
+			}
+
+		case "run_as":
+			if err := dec.Decode(&s.RunAs); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }

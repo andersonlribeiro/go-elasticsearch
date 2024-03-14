@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // IndicesIndexingPressureMemory type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/IndexSettings.ts#L541-L548
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/IndexSettings.ts#L541-L548
 type IndicesIndexingPressureMemory struct {
 	// Limit Number of outstanding bytes that may be consumed by indexing requests. When
 	// this limit is reached or exceeded,
@@ -32,6 +38,42 @@ type IndicesIndexingPressureMemory struct {
 	// operations consume 1.5x this limit,
 	// the node will reject new replica operations. Defaults to 10% of the heap.
 	Limit *int `json:"limit,omitempty"`
+}
+
+func (s *IndicesIndexingPressureMemory) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "limit":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Limit = &value
+			case float64:
+				f := int(v)
+				s.Limit = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewIndicesIndexingPressureMemory returns a IndicesIndexingPressureMemory.

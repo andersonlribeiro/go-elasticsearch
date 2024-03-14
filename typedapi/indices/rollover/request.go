@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package rollover
 
@@ -31,25 +29,42 @@ import (
 
 // Request holds the request body struct for the package rollover
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/rollover/IndicesRolloverRequest.ts#L29-L51
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/rollover/IndicesRolloverRequest.ts#L29-L99
 type Request struct {
-	Aliases    map[string]types.Alias    `json:"aliases,omitempty"`
+
+	// Aliases Aliases for the target index.
+	// Data streams do not support this parameter.
+	Aliases map[string]types.Alias `json:"aliases,omitempty"`
+	// Conditions Conditions for the rollover.
+	// If specified, Elasticsearch only performs the rollover if the current index
+	// satisfies these conditions.
+	// If this parameter is not specified, Elasticsearch performs the rollover
+	// unconditionally.
+	// If conditions are specified, at least one of them must be a `max_*`
+	// condition.
+	// The index will rollover if any `max_*` condition is satisfied and all `min_*`
+	// conditions are satisfied.
 	Conditions *types.RolloverConditions `json:"conditions,omitempty"`
-	Mappings   *types.TypeMapping        `json:"mappings,omitempty"`
-	Settings   map[string]interface{}    `json:"settings,omitempty"`
+	// Mappings Mapping for fields in the index.
+	// If specified, this mapping can include field names, field data types, and
+	// mapping paramaters.
+	Mappings *types.TypeMapping `json:"mappings,omitempty"`
+	// Settings Configuration options for the index.
+	// Data streams do not support this parameter.
+	Settings map[string]json.RawMessage `json:"settings,omitempty"`
 }
 
 // NewRequest returns a Request
 func NewRequest() *Request {
 	r := &Request{
 		Aliases:  make(map[string]types.Alias, 0),
-		Settings: make(map[string]interface{}, 0),
+		Settings: make(map[string]json.RawMessage, 0),
 	}
 	return r
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 

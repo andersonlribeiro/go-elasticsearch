@@ -15,14 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"encoding/json"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/ibdistribution"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/iblambda"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/normalization"
@@ -30,7 +30,7 @@ import (
 
 // SettingsSimilarityIb type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/IndexSettings.ts#L199-L204
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/IndexSettings.ts#L202-L207
 type SettingsSimilarityIb struct {
 	Distribution  ibdistribution.IBDistribution `json:"distribution"`
 	Lambda        iblambda.IBLambda             `json:"lambda"`
@@ -38,11 +38,24 @@ type SettingsSimilarityIb struct {
 	Type          string                        `json:"type,omitempty"`
 }
 
+// MarshalJSON override marshalling to include literal value
+func (s SettingsSimilarityIb) MarshalJSON() ([]byte, error) {
+	type innerSettingsSimilarityIb SettingsSimilarityIb
+	tmp := innerSettingsSimilarityIb{
+		Distribution:  s.Distribution,
+		Lambda:        s.Lambda,
+		Normalization: s.Normalization,
+		Type:          s.Type,
+	}
+
+	tmp.Type = "IB"
+
+	return json.Marshal(tmp)
+}
+
 // NewSettingsSimilarityIb returns a SettingsSimilarityIb.
 func NewSettingsSimilarityIb() *SettingsSimilarityIb {
 	r := &SettingsSimilarityIb{}
-
-	r.Type = "IB"
 
 	return r
 }

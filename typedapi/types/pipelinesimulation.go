@@ -15,26 +15,89 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/actionstatusoptions"
 )
 
 // PipelineSimulation type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ingest/simulate/types.ts#L33-L39
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ingest/simulate/types.ts#L33-L39
 type PipelineSimulation struct {
 	Doc              *DocumentSimulation                      `json:"doc,omitempty"`
 	ProcessorResults []PipelineSimulation                     `json:"processor_results,omitempty"`
 	ProcessorType    *string                                  `json:"processor_type,omitempty"`
 	Status           *actionstatusoptions.ActionStatusOptions `json:"status,omitempty"`
 	Tag              *string                                  `json:"tag,omitempty"`
+}
+
+func (s *PipelineSimulation) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "doc":
+			if err := dec.Decode(&s.Doc); err != nil {
+				return err
+			}
+
+		case "processor_results":
+			if err := dec.Decode(&s.ProcessorResults); err != nil {
+				return err
+			}
+
+		case "processor_type":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.ProcessorType = &o
+
+		case "status":
+			if err := dec.Decode(&s.Status); err != nil {
+				return err
+			}
+
+		case "tag":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Tag = &o
+
+		}
+	}
+	return nil
 }
 
 // NewPipelineSimulation returns a PipelineSimulation.

@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Retrieves usage information for data frame analytics jobs.
 package getdataframeanalyticsstats
 
 import (
-	gobytes "bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -36,6 +34,7 @@ import (
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 const (
@@ -52,11 +51,15 @@ type GetDataFrameAnalyticsStats struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
 
 	id string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewGetDataFrameAnalyticsStats type alias for index.
@@ -80,7 +83,12 @@ func New(tp elastictransport.Interface) *GetDataFrameAnalyticsStats {
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -118,6 +126,9 @@ func (r *GetDataFrameAnalyticsStats) HttpRequest(ctx context.Context) (*http.Req
 		path.WriteString("analytics")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "id", r.id)
+		}
 		path.WriteString(r.id)
 		path.WriteString("/")
 		path.WriteString("_stats")
@@ -133,9 +144,9 @@ func (r *GetDataFrameAnalyticsStats) HttpRequest(ctx context.Context) (*http.Req
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -151,25 +162,116 @@ func (r *GetDataFrameAnalyticsStats) HttpRequest(ctx context.Context) (*http.Req
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r GetDataFrameAnalyticsStats) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r GetDataFrameAnalyticsStats) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "ml.get_data_frame_analytics_stats")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "ml.get_data_frame_analytics_stats")
+		if reader := instrument.RecordRequestBody(ctx, "ml.get_data_frame_analytics_stats", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "ml.get_data_frame_analytics_stats")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the GetDataFrameAnalyticsStats query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the GetDataFrameAnalyticsStats query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a getdataframeanalyticsstats.Response
+func (r GetDataFrameAnalyticsStats) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "ml.get_data_frame_analytics_stats")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r GetDataFrameAnalyticsStats) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r GetDataFrameAnalyticsStats) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "ml.get_data_frame_analytics_stats")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -182,6 +284,14 @@ func (r GetDataFrameAnalyticsStats) IsSuccess(ctx context.Context) (bool, error)
 
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		return true, nil
+	}
+
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the GetDataFrameAnalyticsStats query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
 	}
 
 	return false, nil
@@ -198,9 +308,9 @@ func (r *GetDataFrameAnalyticsStats) Header(key, value string) *GetDataFrameAnal
 // option, the API returns information for the first hundred data frame
 // analytics jobs.
 // API Name: id
-func (r *GetDataFrameAnalyticsStats) Id(v string) *GetDataFrameAnalyticsStats {
+func (r *GetDataFrameAnalyticsStats) Id(id string) *GetDataFrameAnalyticsStats {
 	r.paramSet |= idMask
-	r.id = v
+	r.id = id
 
 	return r
 }
@@ -217,32 +327,32 @@ func (r *GetDataFrameAnalyticsStats) Id(v string) *GetDataFrameAnalyticsStats {
 // If this parameter is `false`, the request returns a 404 status code when
 // there are no matches or only partial matches.
 // API name: allow_no_match
-func (r *GetDataFrameAnalyticsStats) AllowNoMatch(b bool) *GetDataFrameAnalyticsStats {
-	r.values.Set("allow_no_match", strconv.FormatBool(b))
+func (r *GetDataFrameAnalyticsStats) AllowNoMatch(allownomatch bool) *GetDataFrameAnalyticsStats {
+	r.values.Set("allow_no_match", strconv.FormatBool(allownomatch))
 
 	return r
 }
 
 // From Skips the specified number of data frame analytics jobs.
 // API name: from
-func (r *GetDataFrameAnalyticsStats) From(i int) *GetDataFrameAnalyticsStats {
-	r.values.Set("from", strconv.Itoa(i))
+func (r *GetDataFrameAnalyticsStats) From(from int) *GetDataFrameAnalyticsStats {
+	r.values.Set("from", strconv.Itoa(from))
 
 	return r
 }
 
 // Size Specifies the maximum number of data frame analytics jobs to obtain.
 // API name: size
-func (r *GetDataFrameAnalyticsStats) Size(i int) *GetDataFrameAnalyticsStats {
-	r.values.Set("size", strconv.Itoa(i))
+func (r *GetDataFrameAnalyticsStats) Size(size int) *GetDataFrameAnalyticsStats {
+	r.values.Set("size", strconv.Itoa(size))
 
 	return r
 }
 
 // Verbose Defines whether the stats response should be verbose.
 // API name: verbose
-func (r *GetDataFrameAnalyticsStats) Verbose(b bool) *GetDataFrameAnalyticsStats {
-	r.values.Set("verbose", strconv.FormatBool(b))
+func (r *GetDataFrameAnalyticsStats) Verbose(verbose bool) *GetDataFrameAnalyticsStats {
+	r.values.Set("verbose", strconv.FormatBool(verbose))
 
 	return r
 }

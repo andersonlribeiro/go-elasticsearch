@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Starts one or more datafeeds.
 package startdatafeed
@@ -29,11 +27,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 const (
@@ -50,14 +50,19 @@ type StartDatafeed struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
-	req *Request
-	raw json.RawMessage
+	req      *Request
+	deferred []func(request *Request) error
+	buf      *gobytes.Buffer
 
 	paramSet int
 
 	datafeedid string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewStartDatafeed type alias for index.
@@ -69,7 +74,7 @@ func NewStartDatafeedFunc(tp elastictransport.Interface) NewStartDatafeed {
 	return func(datafeedid string) *StartDatafeed {
 		n := New(tp)
 
-		n.DatafeedId(datafeedid)
+		n._datafeedid(datafeedid)
 
 		return n
 	}
@@ -83,7 +88,16 @@ func New(tp elastictransport.Interface) *StartDatafeed {
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+
+		buf: gobytes.NewBuffer(nil),
+
+		req: NewRequest(),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -91,7 +105,7 @@ func New(tp elastictransport.Interface) *StartDatafeed {
 
 // Raw takes a json payload as input which is then passed to the http.Request
 // If specified Raw takes precedence on Request method.
-func (r *StartDatafeed) Raw(raw json.RawMessage) *StartDatafeed {
+func (r *StartDatafeed) Raw(raw io.Reader) *StartDatafeed {
 	r.raw = raw
 
 	return r
@@ -113,9 +127,17 @@ func (r *StartDatafeed) HttpRequest(ctx context.Context) (*http.Request, error) 
 
 	var err error
 
-	if r.raw != nil {
-		r.buf.Write(r.raw)
-	} else if r.req != nil {
+	if len(r.deferred) > 0 {
+		for _, f := range r.deferred {
+			deferredErr := f(r.req)
+			if deferredErr != nil {
+				return nil, deferredErr
+			}
+		}
+	}
+
+	if r.raw == nil && r.req != nil {
+
 		data, err := json.Marshal(r.req)
 
 		if err != nil {
@@ -123,6 +145,11 @@ func (r *StartDatafeed) HttpRequest(ctx context.Context) (*http.Request, error) 
 		}
 
 		r.buf.Write(data)
+
+	}
+
+	if r.buf.Len() > 0 {
+		r.raw = r.buf
 	}
 
 	r.path.Scheme = "http"
@@ -135,6 +162,9 @@ func (r *StartDatafeed) HttpRequest(ctx context.Context) (*http.Request, error) 
 		path.WriteString("datafeeds")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "datafeedid", r.datafeedid)
+		}
 		path.WriteString(r.datafeedid)
 		path.WriteString("/")
 		path.WriteString("_start")
@@ -150,15 +180,15 @@ func (r *StartDatafeed) HttpRequest(ctx context.Context) (*http.Request, error) 
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
 
 	if req.Header.Get("Content-Type") == "" {
-		if r.buf.Len() > 0 {
+		if r.raw != nil {
 			req.Header.Set("Content-Type", "application/vnd.elasticsearch+json;compatible-with=8")
 		}
 	}
@@ -174,19 +204,100 @@ func (r *StartDatafeed) HttpRequest(ctx context.Context) (*http.Request, error) 
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r StartDatafeed) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r StartDatafeed) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "ml.start_datafeed")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "ml.start_datafeed")
+		if reader := instrument.RecordRequestBody(ctx, "ml.start_datafeed", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "ml.start_datafeed")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the StartDatafeed query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the StartDatafeed query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
+}
+
+// Do runs the request through the transport, handle the response and returns a startdatafeed.Response
+func (r StartDatafeed) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "ml.start_datafeed")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
 }
 
 // Header set a key, value pair in the StartDatafeed headers map.
@@ -202,57 +313,33 @@ func (r *StartDatafeed) Header(key, value string) *StartDatafeed {
 // start and end with alphanumeric
 // characters.
 // API Name: datafeedid
-func (r *StartDatafeed) DatafeedId(v string) *StartDatafeed {
+func (r *StartDatafeed) _datafeedid(datafeedid string) *StartDatafeed {
 	r.paramSet |= datafeedidMask
-	r.datafeedid = v
+	r.datafeedid = datafeedid
 
 	return r
 }
 
-// End The time that the datafeed should end, which can be specified by using one of
-// the following formats:
-//
-// * ISO 8601 format with milliseconds, for example `2017-01-22T06:00:00.000Z`
-// * ISO 8601 format without milliseconds, for example
-// `2017-01-22T06:00:00+00:00`
-// * Milliseconds since the epoch, for example `1485061200000`
-//
-// Date-time arguments using either of the ISO 8601 formats must have a time
-// zone designator, where `Z` is accepted
-// as an abbreviation for UTC time. When a URL is expected (for example, in
-// browsers), the `+` used in time zone
-// designators must be encoded as `%2B`.
-// The end time value is exclusive. If you do not specify an end time, the
-// datafeed
-// runs continuously.
+// End Refer to the description for the `end` query parameter.
 // API name: end
-func (r *StartDatafeed) End(value string) *StartDatafeed {
-	r.values.Set("end", value)
+func (r *StartDatafeed) End(datetime types.DateTime) *StartDatafeed {
+	r.req.End = datetime
 
 	return r
 }
 
-// Start The time that the datafeed should begin, which can be specified by using the
-// same formats as the `end` parameter.
-// This value is inclusive.
-// If you do not specify a start time and the datafeed is associated with a new
-// anomaly detection job, the analysis
-// starts from the earliest time for which data is available.
-// If you restart a stopped datafeed and specify a start value that is earlier
-// than the timestamp of the latest
-// processed record, the datafeed continues from 1 millisecond after the
-// timestamp of the latest processed record.
+// Start Refer to the description for the `start` query parameter.
 // API name: start
-func (r *StartDatafeed) Start(value string) *StartDatafeed {
-	r.values.Set("start", value)
+func (r *StartDatafeed) Start(datetime types.DateTime) *StartDatafeed {
+	r.req.Start = datetime
 
 	return r
 }
 
-// Timeout Specifies the amount of time to wait until a datafeed starts.
+// Timeout Refer to the description for the `timeout` query parameter.
 // API name: timeout
-func (r *StartDatafeed) Timeout(value string) *StartDatafeed {
-	r.values.Set("timeout", value)
+func (r *StartDatafeed) Timeout(duration types.Duration) *StartDatafeed {
+	r.req.Timeout = duration
 
 	return r
 }

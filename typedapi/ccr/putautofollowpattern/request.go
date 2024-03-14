@@ -15,23 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package putautofollowpattern
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // Request holds the request body struct for the package putautofollowpattern
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ccr/put_auto_follow_pattern/PutAutoFollowPatternRequest.ts#L27-L113
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ccr/put_auto_follow_pattern/PutAutoFollowPatternRequest.ts#L27-L112
 type Request struct {
 
 	// FollowIndexPattern The name of follower index. The template {{leader_index}} can be used to
@@ -55,10 +57,10 @@ type Request struct {
 	MaxReadRequestOperationCount *int `json:"max_read_request_operation_count,omitempty"`
 	// MaxReadRequestSize The maximum size in bytes of per read of a batch of operations pulled from
 	// the remote cluster.
-	MaxReadRequestSize *types.ByteSize `json:"max_read_request_size,omitempty"`
+	MaxReadRequestSize types.ByteSize `json:"max_read_request_size,omitempty"`
 	// MaxRetryDelay The maximum time to wait before retrying an operation that failed
 	// exceptionally. An exponential backoff strategy is employed when retrying.
-	MaxRetryDelay *types.Duration `json:"max_retry_delay,omitempty"`
+	MaxRetryDelay types.Duration `json:"max_retry_delay,omitempty"`
 	// MaxWriteBufferCount The maximum number of operations that can be queued for writing. When this
 	// limit is reached, reads from the remote cluster will be deferred until the
 	// number of queued operations goes below the limit.
@@ -66,36 +68,36 @@ type Request struct {
 	// MaxWriteBufferSize The maximum total bytes of operations that can be queued for writing. When
 	// this limit is reached, reads from the remote cluster will be deferred until
 	// the total bytes of queued operations goes below the limit.
-	MaxWriteBufferSize *types.ByteSize `json:"max_write_buffer_size,omitempty"`
+	MaxWriteBufferSize types.ByteSize `json:"max_write_buffer_size,omitempty"`
 	// MaxWriteRequestOperationCount The maximum number of operations per bulk write request executed on the
 	// follower.
 	MaxWriteRequestOperationCount *int `json:"max_write_request_operation_count,omitempty"`
 	// MaxWriteRequestSize The maximum total bytes of operations per bulk write request executed on the
 	// follower.
-	MaxWriteRequestSize *types.ByteSize `json:"max_write_request_size,omitempty"`
+	MaxWriteRequestSize types.ByteSize `json:"max_write_request_size,omitempty"`
 	// ReadPollTimeout The maximum time to wait for new operations on the remote cluster when the
 	// follower index is synchronized with the leader index. When the timeout has
 	// elapsed, the poll for operations will return to the follower so that it can
 	// update some statistics. Then the follower will immediately attempt to read
 	// from the leader again.
-	ReadPollTimeout *types.Duration `json:"read_poll_timeout,omitempty"`
+	ReadPollTimeout types.Duration `json:"read_poll_timeout,omitempty"`
 	// RemoteCluster The remote cluster containing the leader indices to match against.
 	RemoteCluster string `json:"remote_cluster"`
 	// Settings Settings to override from the leader index. Note that certain settings can
 	// not be overrode (e.g., index.number_of_shards).
-	Settings map[string]interface{} `json:"settings,omitempty"`
+	Settings map[string]json.RawMessage `json:"settings,omitempty"`
 }
 
 // NewRequest returns a Request
 func NewRequest() *Request {
 	r := &Request{
-		Settings: make(map[string]interface{}, 0),
+		Settings: make(map[string]json.RawMessage, 0),
 	}
 	return r
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -104,4 +106,163 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "follow_index_pattern":
+			if err := dec.Decode(&s.FollowIndexPattern); err != nil {
+				return err
+			}
+
+		case "leader_index_exclusion_patterns":
+			if err := dec.Decode(&s.LeaderIndexExclusionPatterns); err != nil {
+				return err
+			}
+
+		case "leader_index_patterns":
+			if err := dec.Decode(&s.LeaderIndexPatterns); err != nil {
+				return err
+			}
+
+		case "max_outstanding_read_requests":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.MaxOutstandingReadRequests = &value
+			case float64:
+				f := int(v)
+				s.MaxOutstandingReadRequests = &f
+			}
+
+		case "max_outstanding_write_requests":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.MaxOutstandingWriteRequests = &value
+			case float64:
+				f := int(v)
+				s.MaxOutstandingWriteRequests = &f
+			}
+
+		case "max_read_request_operation_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.MaxReadRequestOperationCount = &value
+			case float64:
+				f := int(v)
+				s.MaxReadRequestOperationCount = &f
+			}
+
+		case "max_read_request_size":
+			if err := dec.Decode(&s.MaxReadRequestSize); err != nil {
+				return err
+			}
+
+		case "max_retry_delay":
+			if err := dec.Decode(&s.MaxRetryDelay); err != nil {
+				return err
+			}
+
+		case "max_write_buffer_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.MaxWriteBufferCount = &value
+			case float64:
+				f := int(v)
+				s.MaxWriteBufferCount = &f
+			}
+
+		case "max_write_buffer_size":
+			if err := dec.Decode(&s.MaxWriteBufferSize); err != nil {
+				return err
+			}
+
+		case "max_write_request_operation_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.MaxWriteRequestOperationCount = &value
+			case float64:
+				f := int(v)
+				s.MaxWriteRequestOperationCount = &f
+			}
+
+		case "max_write_request_size":
+			if err := dec.Decode(&s.MaxWriteRequestSize); err != nil {
+				return err
+			}
+
+		case "read_poll_timeout":
+			if err := dec.Decode(&s.ReadPollTimeout); err != nil {
+				return err
+			}
+
+		case "remote_cluster":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.RemoteCluster = o
+
+		case "settings":
+			if s.Settings == nil {
+				s.Settings = make(map[string]json.RawMessage, 0)
+			}
+			if err := dec.Decode(&s.Settings); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }

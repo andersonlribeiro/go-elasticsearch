@@ -15,21 +15,103 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // UnmappedTermsAggregate type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/Aggregate.ts#L422-L428
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/Aggregate.ts#L423-L429
 type UnmappedTermsAggregate struct {
-	Buckets                 BucketsVoid            `json:"buckets"`
-	DocCountErrorUpperBound *int64                 `json:"doc_count_error_upper_bound,omitempty"`
-	Meta                    map[string]interface{} `json:"meta,omitempty"`
-	SumOtherDocCount        *int64                 `json:"sum_other_doc_count,omitempty"`
+	Buckets                 BucketsVoid `json:"buckets"`
+	DocCountErrorUpperBound *int64      `json:"doc_count_error_upper_bound,omitempty"`
+	Meta                    Metadata    `json:"meta,omitempty"`
+	SumOtherDocCount        *int64      `json:"sum_other_doc_count,omitempty"`
+}
+
+func (s *UnmappedTermsAggregate) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "buckets":
+
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			source := bytes.NewReader(rawMsg)
+			localDec := json.NewDecoder(source)
+			switch rawMsg[0] {
+			case '{':
+				o := make(map[string]interface{}, 0)
+				if err := localDec.Decode(&o); err != nil {
+					return err
+				}
+				s.Buckets = o
+			case '[':
+				o := []interface{}{}
+				if err := localDec.Decode(&o); err != nil {
+					return err
+				}
+				s.Buckets = o
+			}
+
+		case "doc_count_error_upper_bound":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.DocCountErrorUpperBound = &value
+			case float64:
+				f := int64(v)
+				s.DocCountErrorUpperBound = &f
+			}
+
+		case "meta":
+			if err := dec.Decode(&s.Meta); err != nil {
+				return err
+			}
+
+		case "sum_other_doc_count":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.SumOtherDocCount = &value
+			case float64:
+				f := int64(v)
+				s.SumOtherDocCount = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewUnmappedTermsAggregate returns a UnmappedTermsAggregate.

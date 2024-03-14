@@ -57,6 +57,10 @@ var skipFiles = []string{
 	"api_key/12_grant.yml",                // incompatible $ stash replacement, need bearer token integration
 	"aggregations/percentiles_bucket.yml", // incompatible maps
 	"user_profile/10_basic.yml",
+	"indices.stats/100_search_idle.yml", // incompatible maps of array
+	"ml/3rd_party_deployment.yml",       // incompatible ml tests
+	"dlm/10_usage.yml",                  // incompatible float expansion
+	"api_key/60_admin_user.yml",
 }
 
 // TODO: Comments into descriptions for `Skip()`
@@ -105,6 +109,8 @@ eql/20_runtime_mappings.yml:
 spatial/60_geo_line.yml:
   - Test geo_line aggregation on geo points
   - Test empty buckets
+spatial/100_geo_grid_ingest.yml:
+  - Test geo_grid on geotile using default target format
 
 # Arbitrary key
 indices.shrink/10_basic.yml:
@@ -146,6 +152,9 @@ cat.aliases/10_basic.yml:
   - "Complex alias (pre 7.4.0)"
   - "Column headers (pre 7.4.0)"
   - "Alias against closed index (pre 7.4.0)"
+
+count/30_min_score.yml:
+  - "count with min_score"
 
 # Checks for nil required arguments makes this test incompatible with the integration tests
 indices.delete_alias/all_path_options.yml:
@@ -208,11 +217,13 @@ cluster.desired_nodes/10_basic.yml:
 
 # ----- X-Pack ----------------------------------------------------------------
 
-# Float "3.0" decoded as "3" by gopkg.in/yaml.v2
+# Floats "3.0" decoded as int "3" by gopkg.in/yaml.v2
 analytics/top_metrics.yml:
 runtime_fields/30_double.yml:
   - docvalue_fields
   - fetch fields
+search.vectors/60_dense_vector_dynamic_mapping.yml:
+  - Fields with float arrays below the threshold still map as float
 
 # Stash in body
 api_key/10_basic.yml:
@@ -225,6 +236,10 @@ rollup/put_job.yml:
 # Changing password locks out tests
 change_password/10_basic.yml:
   - Test user changing their own password
+  - Test changing users password with prehashed password
+
+change_password/12_custom_hash.yml:
+  - Test changing users password with pre-hashed password
 
 # Missing refreshes in the test
 data_frame/transforms_start_stop.yml:
@@ -236,6 +251,8 @@ transform/transforms_start_stop.yml:
 transform/transforms_stats.yml:
   - Test get multiple transform stats
   - Test get multiple transform stats where one does not have a task
+transform/transforms_unattended.yml:
+  - Test unattended put and start wildcard
 
 # More QA tests than API tests
 data_frame/transforms_stats.yml:
@@ -302,9 +319,14 @@ ml/data_frame_analytics_crud.yml:
 ml/delete_model_snapshot.yml:
 ml/get_datafeed_stats.yml:
 ml/get_model_snapshots.yml:
+eql/30_async_missing_events.yml:
 
 # resource_already_exists_exception for model, need improved teardown for models
 ml/semantic_search.yml:
+
+# model is not deployed to any node
+ml/text_expansion_search.yml:
+ml/text_expansion_search_sparse_vector.yml:
 
 # TEMPORARY: Missing 'body: { indices: "test_index" }' payload, TODO: PR
 snapshot/10_basic.yml:
@@ -433,9 +455,10 @@ api_key/30_update.yml:
   - Test bulk update api key with empty request fields
 api_key/40_view_role_descriptors.yml:
   - Test API key role descriptors in Get and Query responses
-
-change_password/10_basic.yml:
-  - Test changing users password with prehashed password
+api_key/50_cross_cluster.yml:
+  - Test create a cross-cluster API key
+authenticate/11_admin_user.yml:
+  - Test authenticate with token
 
 token/10_basic.yml:
   - Test invalidate user's tokens
@@ -472,4 +495,21 @@ search/400_synthetic_source.yml:
 
 health/10_usage.yml:
   - Usage stats on the health API
+
+esql/10_basic.yml:
+  - Test Mixed Input Params
+
+esql/20_aggs.yml:
+
+esql/25_aggs_on_null.yml:
+  - group on null, long
+
+esql/30_types.yml:
+  - unsigned_long
+
+esql/40_unsupported_types.yml:
+  - spatial types unsupported in 8.11
+
+esql/50_index_patterns.yml:
+  - disjoint_mappings
 `

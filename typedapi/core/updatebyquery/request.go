@@ -15,16 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package updatebyquery
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/conflicts"
@@ -32,13 +34,20 @@ import (
 
 // Request holds the request body struct for the package updatebyquery
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/update_by_query/UpdateByQueryRequest.ts#L37-L85
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/update_by_query/UpdateByQueryRequest.ts#L37-L221
 type Request struct {
+
+	// Conflicts What to do if update by query hits version conflicts: `abort` or `proceed`.
 	Conflicts *conflicts.Conflicts `json:"conflicts,omitempty"`
-	MaxDocs   *int64               `json:"max_docs,omitempty"`
-	Query     *types.Query         `json:"query,omitempty"`
-	Script    *types.Script        `json:"script,omitempty"`
-	Slice     *types.SlicedScroll  `json:"slice,omitempty"`
+	// MaxDocs The maximum number of documents to update.
+	MaxDocs *int64 `json:"max_docs,omitempty"`
+	// Query Specifies the documents to update using the Query DSL.
+	Query *types.Query `json:"query,omitempty"`
+	// Script The script to run to update the document source or metadata when updating.
+	Script types.Script `json:"script,omitempty"`
+	// Slice Slice the request manually using the provided slice ID and total number of
+	// slices.
+	Slice *types.SlicedScroll `json:"slice,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -48,7 +57,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -57,4 +66,89 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "conflicts":
+			if err := dec.Decode(&s.Conflicts); err != nil {
+				return err
+			}
+
+		case "max_docs":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.MaxDocs = &value
+			case float64:
+				f := int64(v)
+				s.MaxDocs = &f
+			}
+
+		case "query":
+			if err := dec.Decode(&s.Query); err != nil {
+				return err
+			}
+
+		case "script":
+			message := json.RawMessage{}
+			if err := dec.Decode(&message); err != nil {
+				return err
+			}
+			keyDec := json.NewDecoder(bytes.NewReader(message))
+			for {
+				t, err := keyDec.Token()
+				if err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+					return err
+				}
+
+				switch t {
+
+				case "lang", "options", "source":
+					o := types.NewInlineScript()
+					localDec := json.NewDecoder(bytes.NewReader(message))
+					if err := localDec.Decode(&o); err != nil {
+						return err
+					}
+					s.Script = o
+
+				case "id":
+					o := types.NewStoredScriptId()
+					localDec := json.NewDecoder(bytes.NewReader(message))
+					if err := localDec.Decode(&o); err != nil {
+						return err
+					}
+					s.Script = o
+
+				}
+			}
+
+		case "slice":
+			if err := dec.Decode(&s.Slice); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }

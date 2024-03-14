@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // AnalysisLimits type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/Analysis.ts#L104-L115
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/Analysis.ts#L161-L172
 type AnalysisLimits struct {
 	// CategorizationExamplesLimit The maximum number of examples stored per category in memory and in the
 	// results data store. If you increase this value, more examples are available,
@@ -49,6 +55,53 @@ type AnalysisLimits struct {
 	// create jobs that have `model_memory_limit` values greater than that setting
 	// value.
 	ModelMemoryLimit *string `json:"model_memory_limit,omitempty"`
+}
+
+func (s *AnalysisLimits) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "categorization_examples_limit":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.CategorizationExamplesLimit = &value
+			case float64:
+				f := int64(v)
+				s.CategorizationExamplesLimit = &f
+			}
+
+		case "model_memory_limit":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.ModelMemoryLimit = &o
+
+		}
+	}
+	return nil
 }
 
 // NewAnalysisLimits returns a AnalysisLimits.

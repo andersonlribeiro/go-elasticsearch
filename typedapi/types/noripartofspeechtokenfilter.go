@@ -15,27 +15,79 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // NoriPartOfSpeechTokenFilter type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/analysis/token_filters.ts#L272-L275
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/analysis/token_filters.ts#L273-L276
 type NoriPartOfSpeechTokenFilter struct {
 	Stoptags []string `json:"stoptags,omitempty"`
 	Type     string   `json:"type,omitempty"`
 	Version  *string  `json:"version,omitempty"`
 }
 
+func (s *NoriPartOfSpeechTokenFilter) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "stoptags":
+			if err := dec.Decode(&s.Stoptags); err != nil {
+				return err
+			}
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		case "version":
+			if err := dec.Decode(&s.Version); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
+// MarshalJSON override marshalling to include literal value
+func (s NoriPartOfSpeechTokenFilter) MarshalJSON() ([]byte, error) {
+	type innerNoriPartOfSpeechTokenFilter NoriPartOfSpeechTokenFilter
+	tmp := innerNoriPartOfSpeechTokenFilter{
+		Stoptags: s.Stoptags,
+		Type:     s.Type,
+		Version:  s.Version,
+	}
+
+	tmp.Type = "nori_part_of_speech"
+
+	return json.Marshal(tmp)
+}
+
 // NewNoriPartOfSpeechTokenFilter returns a NoriPartOfSpeechTokenFilter.
 func NewNoriPartOfSpeechTokenFilter() *NoriPartOfSpeechTokenFilter {
 	r := &NoriPartOfSpeechTokenFilter{}
-
-	r.Type = "nori_part_of_speech"
 
 	return r
 }

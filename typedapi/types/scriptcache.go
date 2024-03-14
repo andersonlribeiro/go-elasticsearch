@@ -15,21 +15,108 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // ScriptCache type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/_types/Stats.ts#L406-L411
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/_types/Stats.ts#L1031-L1045
 type ScriptCache struct {
-	CacheEvictions            *int64  `json:"cache_evictions,omitempty"`
-	CompilationLimitTriggered *int64  `json:"compilation_limit_triggered,omitempty"`
-	Compilations              *int64  `json:"compilations,omitempty"`
-	Context                   *string `json:"context,omitempty"`
+	// CacheEvictions Total number of times the script cache has evicted old data.
+	CacheEvictions *int64 `json:"cache_evictions,omitempty"`
+	// CompilationLimitTriggered Total number of times the script compilation circuit breaker has limited
+	// inline script compilations.
+	CompilationLimitTriggered *int64 `json:"compilation_limit_triggered,omitempty"`
+	// Compilations Total number of inline script compilations performed by the node.
+	Compilations *int64  `json:"compilations,omitempty"`
+	Context      *string `json:"context,omitempty"`
+}
+
+func (s *ScriptCache) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "cache_evictions":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.CacheEvictions = &value
+			case float64:
+				f := int64(v)
+				s.CacheEvictions = &f
+			}
+
+		case "compilation_limit_triggered":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.CompilationLimitTriggered = &value
+			case float64:
+				f := int64(v)
+				s.CompilationLimitTriggered = &f
+			}
+
+		case "compilations":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.Compilations = &value
+			case float64:
+				f := int64(v)
+				s.Compilations = &f
+			}
+
+		case "context":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Context = &o
+
+		}
+	}
+	return nil
 }
 
 // NewScriptCache returns a ScriptCache.

@@ -15,20 +15,65 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // PainlessContextSetup type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/scripts_painless_execute/types.ts#L25-L29
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/scripts_painless_execute/types.ts#L25-L39
 type PainlessContextSetup struct {
-	Document interface{} `json:"document,omitempty"`
-	Index    string      `json:"index"`
-	Query    Query       `json:"query"`
+	// Document Document that’s temporarily indexed in-memory and accessible from the script.
+	Document json.RawMessage `json:"document,omitempty"`
+	// Index Index containing a mapping that’s compatible with the indexed document.
+	// You may specify a remote index by prefixing the index with the remote cluster
+	// alias.
+	Index string `json:"index"`
+	// Query Use this parameter to specify a query for computing a score.
+	Query Query `json:"query"`
+}
+
+func (s *PainlessContextSetup) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "document":
+			if err := dec.Decode(&s.Document); err != nil {
+				return err
+			}
+
+		case "index":
+			if err := dec.Decode(&s.Index); err != nil {
+				return err
+			}
+
+		case "query":
+			if err := dec.Decode(&s.Query); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewPainlessContextSetup returns a PainlessContextSetup.

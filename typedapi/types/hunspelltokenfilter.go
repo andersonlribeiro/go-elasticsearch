@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // HunspellTokenFilter type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/analysis/token_filters.ts#L199-L205
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/analysis/token_filters.ts#L200-L206
 type HunspellTokenFilter struct {
 	Dedup       *bool   `json:"dedup,omitempty"`
 	Dictionary  *string `json:"dictionary,omitempty"`
@@ -34,11 +40,108 @@ type HunspellTokenFilter struct {
 	Version     *string `json:"version,omitempty"`
 }
 
+func (s *HunspellTokenFilter) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "dedup":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Dedup = &value
+			case bool:
+				s.Dedup = &v
+			}
+
+		case "dictionary":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Dictionary = &o
+
+		case "locale":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Locale = o
+
+		case "longest_only":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.LongestOnly = &value
+			case bool:
+				s.LongestOnly = &v
+			}
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		case "version":
+			if err := dec.Decode(&s.Version); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
+// MarshalJSON override marshalling to include literal value
+func (s HunspellTokenFilter) MarshalJSON() ([]byte, error) {
+	type innerHunspellTokenFilter HunspellTokenFilter
+	tmp := innerHunspellTokenFilter{
+		Dedup:       s.Dedup,
+		Dictionary:  s.Dictionary,
+		Locale:      s.Locale,
+		LongestOnly: s.LongestOnly,
+		Type:        s.Type,
+		Version:     s.Version,
+	}
+
+	tmp.Type = "hunspell"
+
+	return json.Marshal(tmp)
+}
+
 // NewHunspellTokenFilter returns a HunspellTokenFilter.
 func NewHunspellTokenFilter() *HunspellTokenFilter {
 	r := &HunspellTokenFilter{}
-
-	r.Type = "hunspell"
 
 	return r
 }

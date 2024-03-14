@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // GeoIpDownloadStatistics type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ingest/geo_ip_stats/types.ts#L24-L35
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ingest/geo_ip_stats/types.ts#L24-L35
 type GeoIpDownloadStatistics struct {
 	// DatabaseCount Current number of databases available for use.
 	DatabaseCount int `json:"database_count"`
@@ -36,6 +42,95 @@ type GeoIpDownloadStatistics struct {
 	SuccessfulDownloads int `json:"successful_downloads"`
 	// TotalDownloadTime Total milliseconds spent downloading databases.
 	TotalDownloadTime int64 `json:"total_download_time"`
+}
+
+func (s *GeoIpDownloadStatistics) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "database_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.DatabaseCount = value
+			case float64:
+				f := int(v)
+				s.DatabaseCount = f
+			}
+
+		case "failed_downloads":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.FailedDownloads = value
+			case float64:
+				f := int(v)
+				s.FailedDownloads = f
+			}
+
+		case "skipped_updates":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.SkippedUpdates = value
+			case float64:
+				f := int(v)
+				s.SkippedUpdates = f
+			}
+
+		case "successful_downloads":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.SuccessfulDownloads = value
+			case float64:
+				f := int(v)
+				s.SuccessfulDownloads = f
+			}
+
+		case "total_download_time":
+			if err := dec.Decode(&s.TotalDownloadTime); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewGeoIpDownloadStatistics returns a GeoIpDownloadStatistics.

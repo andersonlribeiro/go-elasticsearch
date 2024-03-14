@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package create
 
@@ -31,14 +29,17 @@ import (
 
 // Request holds the request body struct for the package create
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/create/IndicesCreateRequest.ts#L28-L56
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/create/IndicesCreateRequest.ts#L28-L81
 type Request struct {
+
+	// Aliases Aliases for the index.
 	Aliases map[string]types.Alias `json:"aliases,omitempty"`
 	// Mappings Mapping for fields in the index. If specified, this mapping can include:
 	// - Field names
 	// - Field data types
 	// - Mapping parameters
-	Mappings *types.TypeMapping   `json:"mappings,omitempty"`
+	Mappings *types.TypeMapping `json:"mappings,omitempty"`
+	// Settings Configuration options for the index.
 	Settings *types.IndexSettings `json:"settings,omitempty"`
 }
 
@@ -51,7 +52,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 

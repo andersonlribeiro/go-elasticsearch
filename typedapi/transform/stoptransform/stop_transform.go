@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Stops one or more transforms.
 package stoptransform
 
 import (
-	gobytes "bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -36,6 +34,7 @@ import (
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 const (
@@ -52,11 +51,15 @@ type StopTransform struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
 
 	transformid string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewStopTransform type alias for index.
@@ -68,7 +71,7 @@ func NewStopTransformFunc(tp elastictransport.Interface) NewStopTransform {
 	return func(transformid string) *StopTransform {
 		n := New(tp)
 
-		n.TransformId(transformid)
+		n._transformid(transformid)
 
 		return n
 	}
@@ -82,7 +85,12 @@ func New(tp elastictransport.Interface) *StopTransform {
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -105,6 +113,9 @@ func (r *StopTransform) HttpRequest(ctx context.Context) (*http.Request, error) 
 		path.WriteString("_transform")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "transformid", r.transformid)
+		}
 		path.WriteString(r.transformid)
 		path.WriteString("/")
 		path.WriteString("_stop")
@@ -120,9 +131,9 @@ func (r *StopTransform) HttpRequest(ctx context.Context) (*http.Request, error) 
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -138,25 +149,116 @@ func (r *StopTransform) HttpRequest(ctx context.Context) (*http.Request, error) 
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r StopTransform) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r StopTransform) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "transform.stop_transform")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "transform.stop_transform")
+		if reader := instrument.RecordRequestBody(ctx, "transform.stop_transform", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "transform.stop_transform")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the StopTransform query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the StopTransform query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a stoptransform.Response
+func (r StopTransform) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "transform.stop_transform")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r StopTransform) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r StopTransform) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "transform.stop_transform")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -169,6 +271,14 @@ func (r StopTransform) IsSuccess(ctx context.Context) (bool, error) {
 
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		return true, nil
+	}
+
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the StopTransform query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
 	}
 
 	return false, nil
@@ -185,9 +295,9 @@ func (r *StopTransform) Header(key, value string) *StopTransform {
 // comma-separated list or a wildcard expression.
 // To stop all transforms, use `_all` or `*` as the identifier.
 // API Name: transformid
-func (r *StopTransform) TransformId(v string) *StopTransform {
+func (r *StopTransform) _transformid(transformid string) *StopTransform {
 	r.paramSet |= transformidMask
-	r.transformid = v
+	r.transformid = transformid
 
 	return r
 }
@@ -205,16 +315,16 @@ func (r *StopTransform) TransformId(v string) *StopTransform {
 // If it is false, the request returns a 404 status code when there are no
 // matches or only partial matches.
 // API name: allow_no_match
-func (r *StopTransform) AllowNoMatch(b bool) *StopTransform {
-	r.values.Set("allow_no_match", strconv.FormatBool(b))
+func (r *StopTransform) AllowNoMatch(allownomatch bool) *StopTransform {
+	r.values.Set("allow_no_match", strconv.FormatBool(allownomatch))
 
 	return r
 }
 
 // Force If it is true, the API forcefully stops the transforms.
 // API name: force
-func (r *StopTransform) Force(b bool) *StopTransform {
-	r.values.Set("force", strconv.FormatBool(b))
+func (r *StopTransform) Force(force bool) *StopTransform {
+	r.values.Set("force", strconv.FormatBool(force))
 
 	return r
 }
@@ -225,8 +335,8 @@ func (r *StopTransform) Force(b bool) *StopTransform {
 // request continues processing and
 // eventually moves the transform to a STOPPED state.
 // API name: timeout
-func (r *StopTransform) Timeout(value string) *StopTransform {
-	r.values.Set("timeout", value)
+func (r *StopTransform) Timeout(duration string) *StopTransform {
+	r.values.Set("timeout", duration)
 
 	return r
 }
@@ -235,8 +345,8 @@ func (r *StopTransform) Timeout(value string) *StopTransform {
 // checkpoint is completed. If it is false,
 // the transform stops as soon as possible.
 // API name: wait_for_checkpoint
-func (r *StopTransform) WaitForCheckpoint(b bool) *StopTransform {
-	r.values.Set("wait_for_checkpoint", strconv.FormatBool(b))
+func (r *StopTransform) WaitForCheckpoint(waitforcheckpoint bool) *StopTransform {
+	r.values.Set("wait_for_checkpoint", strconv.FormatBool(waitforcheckpoint))
 
 	return r
 }
@@ -245,8 +355,8 @@ func (r *StopTransform) WaitForCheckpoint(b bool) *StopTransform {
 // is false, the API returns
 // immediately and the indexer is stopped asynchronously in the background.
 // API name: wait_for_completion
-func (r *StopTransform) WaitForCompletion(b bool) *StopTransform {
-	r.values.Set("wait_for_completion", strconv.FormatBool(b))
+func (r *StopTransform) WaitForCompletion(waitforcompletion bool) *StopTransform {
+	r.values.Set("wait_for_completion", strconv.FormatBool(waitforcompletion))
 
 	return r
 }

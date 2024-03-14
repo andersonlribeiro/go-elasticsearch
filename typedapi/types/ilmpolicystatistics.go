@@ -15,19 +15,66 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // IlmPolicyStatistics type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/xpack/usage/types.ts#L149-L152
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/xpack/usage/types.ts#L157-L160
 type IlmPolicyStatistics struct {
 	IndicesManaged int    `json:"indices_managed"`
 	Phases         Phases `json:"phases"`
+}
+
+func (s *IlmPolicyStatistics) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "indices_managed":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.IndicesManaged = value
+			case float64:
+				f := int(v)
+				s.IndicesManaged = f
+			}
+
+		case "phases":
+			if err := dec.Decode(&s.Phases); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewIlmPolicyStatistics returns a IlmPolicyStatistics.

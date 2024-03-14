@@ -15,16 +15,21 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // DataframeEvaluationRegression type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/DataframeEvaluation.ts#L55-L62
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/DataframeEvaluation.ts#L55-L62
 type DataframeEvaluationRegression struct {
 	// ActualField The field of the index which contains the ground truth. The data type of this
 	// field must be numerical.
@@ -36,6 +41,41 @@ type DataframeEvaluationRegression struct {
 	// PredictedField The field in the index that contains the predicted value, in other words the
 	// results of the regression analysis.
 	PredictedField string `json:"predicted_field"`
+}
+
+func (s *DataframeEvaluationRegression) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "actual_field":
+			if err := dec.Decode(&s.ActualField); err != nil {
+				return err
+			}
+
+		case "metrics":
+			if err := dec.Decode(&s.Metrics); err != nil {
+				return err
+			}
+
+		case "predicted_field":
+			if err := dec.Decode(&s.PredictedField); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewDataframeEvaluationRegression returns a DataframeEvaluationRegression.

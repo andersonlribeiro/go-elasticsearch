@@ -15,21 +15,74 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // PrivilegesActions type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/security/put_privileges/types.ts#L22-L27
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/security/put_privileges/types.ts#L22-L27
 type PrivilegesActions struct {
-	Actions     []string               `json:"actions"`
-	Application *string                `json:"application,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	Name        *string                `json:"name,omitempty"`
+	Actions     []string `json:"actions"`
+	Application *string  `json:"application,omitempty"`
+	Metadata    Metadata `json:"metadata,omitempty"`
+	Name        *string  `json:"name,omitempty"`
+}
+
+func (s *PrivilegesActions) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "actions":
+			if err := dec.Decode(&s.Actions); err != nil {
+				return err
+			}
+
+		case "application":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Application = &o
+
+		case "metadata":
+			if err := dec.Decode(&s.Metadata); err != nil {
+				return err
+			}
+
+		case "name":
+			if err := dec.Decode(&s.Name); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewPrivilegesActions returns a PrivilegesActions.

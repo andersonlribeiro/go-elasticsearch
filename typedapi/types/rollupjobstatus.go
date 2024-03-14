@@ -15,30 +15,81 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/indexingjobstate"
 )
 
 // RollupJobStatus type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/rollup/get_jobs/types.ts#L60-L64
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/rollup/get_jobs/types.ts#L60-L64
 type RollupJobStatus struct {
-	CurrentPosition map[string]interface{}            `json:"current_position,omitempty"`
+	CurrentPosition map[string]json.RawMessage        `json:"current_position,omitempty"`
 	JobState        indexingjobstate.IndexingJobState `json:"job_state"`
 	UpgradedDocId   *bool                             `json:"upgraded_doc_id,omitempty"`
+}
+
+func (s *RollupJobStatus) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "current_position":
+			if s.CurrentPosition == nil {
+				s.CurrentPosition = make(map[string]json.RawMessage, 0)
+			}
+			if err := dec.Decode(&s.CurrentPosition); err != nil {
+				return err
+			}
+
+		case "job_state":
+			if err := dec.Decode(&s.JobState); err != nil {
+				return err
+			}
+
+		case "upgraded_doc_id":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.UpgradedDocId = &value
+			case bool:
+				s.UpgradedDocId = &v
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewRollupJobStatus returns a RollupJobStatus.
 func NewRollupJobStatus() *RollupJobStatus {
 	r := &RollupJobStatus{
-		CurrentPosition: make(map[string]interface{}, 0),
+		CurrentPosition: make(map[string]json.RawMessage, 0),
 	}
 
 	return r

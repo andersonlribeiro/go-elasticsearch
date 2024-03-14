@@ -15,21 +15,56 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // Latest type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/transform/_types/Transform.ts#L47-L52
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/transform/_types/Transform.ts#L47-L52
 type Latest struct {
 	// Sort Specifies the date field that is used to identify the latest documents.
 	Sort string `json:"sort"`
 	// UniqueKey Specifies an array of one or more fields that are used to group the data.
 	UniqueKey []string `json:"unique_key"`
+}
+
+func (s *Latest) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "sort":
+			if err := dec.Decode(&s.Sort); err != nil {
+				return err
+			}
+
+		case "unique_key":
+			if err := dec.Decode(&s.UniqueKey); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewLatest returns a Latest.

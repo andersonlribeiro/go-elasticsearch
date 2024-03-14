@@ -15,21 +15,51 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // IndexSettingsLifecycleStep type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/IndexSettings.ts#L302-L308
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/IndexSettings.ts#L305-L311
 type IndexSettingsLifecycleStep struct {
 	// WaitTimeThreshold Time to wait for the cluster to resolve allocation issues during an ILM
 	// shrink action. Must be greater than 1h (1 hour).
 	// See Shard allocation for shrink.
-	WaitTimeThreshold *Duration `json:"wait_time_threshold,omitempty"`
+	WaitTimeThreshold Duration `json:"wait_time_threshold,omitempty"`
+}
+
+func (s *IndexSettingsLifecycleStep) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "wait_time_threshold":
+			if err := dec.Decode(&s.WaitTimeThreshold); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewIndexSettingsLifecycleStep returns a IndexSettingsLifecycleStep.

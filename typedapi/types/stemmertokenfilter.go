@@ -15,27 +15,87 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // StemmerTokenFilter type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/analysis/token_filters.ts#L319-L322
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/analysis/token_filters.ts#L320-L324
 type StemmerTokenFilter struct {
-	Language string  `json:"language"`
+	Language *string `json:"language,omitempty"`
 	Type     string  `json:"type,omitempty"`
 	Version  *string `json:"version,omitempty"`
+}
+
+func (s *StemmerTokenFilter) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "language", "name":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Language = &o
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		case "version":
+			if err := dec.Decode(&s.Version); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
+// MarshalJSON override marshalling to include literal value
+func (s StemmerTokenFilter) MarshalJSON() ([]byte, error) {
+	type innerStemmerTokenFilter StemmerTokenFilter
+	tmp := innerStemmerTokenFilter{
+		Language: s.Language,
+		Type:     s.Type,
+		Version:  s.Version,
+	}
+
+	tmp.Type = "stemmer"
+
+	return json.Marshal(tmp)
 }
 
 // NewStemmerTokenFilter returns a StemmerTokenFilter.
 func NewStemmerTokenFilter() *StemmerTokenFilter {
 	r := &StemmerTokenFilter{}
-
-	r.Type = "stemmer"
 
 	return r
 }

@@ -15,23 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package closejob
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // Request holds the request body struct for the package closejob
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/close_job/MlCloseJobRequest.ts#L24-L77
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/close_job/MlCloseJobRequest.ts#L24-L77
 type Request struct {
 
 	// AllowNoMatch Refer to the description for the `allow_no_match` query parameter.
@@ -39,7 +41,7 @@ type Request struct {
 	// Force Refer to the descriptiion for the `force` query parameter.
 	Force *bool `json:"force,omitempty"`
 	// Timeout Refer to the description for the `timeout` query parameter.
-	Timeout *types.Duration `json:"timeout,omitempty"`
+	Timeout types.Duration `json:"timeout,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -49,7 +51,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -58,4 +60,56 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "allow_no_match":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.AllowNoMatch = &value
+			case bool:
+				s.AllowNoMatch = &v
+			}
+
+		case "force":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Force = &value
+			case bool:
+				s.Force = &v
+			}
+
+		case "timeout":
+			if err := dec.Decode(&s.Timeout); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }

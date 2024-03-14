@@ -15,22 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 // SlowlogTresholds type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/IndexSettings.ts#L479-L488
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/IndexSettings.ts#L482-L485
 type SlowlogTresholds struct {
 	Fetch *SlowlogTresholdLevels `json:"fetch,omitempty"`
-	// Index The indexing slow log, similar in functionality to the search slow log. The
-	// log file name ends with `_index_indexing_slowlog.json`.
-	// Log and the thresholds are configured in the same way as the search slowlog.
-	Index *SlowlogTresholdLevels `json:"index,omitempty"`
 	Query *SlowlogTresholdLevels `json:"query,omitempty"`
 }
 

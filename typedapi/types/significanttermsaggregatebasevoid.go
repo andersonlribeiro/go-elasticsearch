@@ -15,21 +15,103 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // SignificantTermsAggregateBaseVoid type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/Aggregate.ts#L580-L585
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/Aggregate.ts#L581-L586
 type SignificantTermsAggregateBaseVoid struct {
-	BgCount  *int64                 `json:"bg_count,omitempty"`
-	Buckets  BucketsVoid            `json:"buckets"`
-	DocCount *int64                 `json:"doc_count,omitempty"`
-	Meta     map[string]interface{} `json:"meta,omitempty"`
+	BgCount  *int64      `json:"bg_count,omitempty"`
+	Buckets  BucketsVoid `json:"buckets"`
+	DocCount *int64      `json:"doc_count,omitempty"`
+	Meta     Metadata    `json:"meta,omitempty"`
+}
+
+func (s *SignificantTermsAggregateBaseVoid) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "bg_count":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.BgCount = &value
+			case float64:
+				f := int64(v)
+				s.BgCount = &f
+			}
+
+		case "buckets":
+
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			source := bytes.NewReader(rawMsg)
+			localDec := json.NewDecoder(source)
+			switch rawMsg[0] {
+			case '{':
+				o := make(map[string]interface{}, 0)
+				if err := localDec.Decode(&o); err != nil {
+					return err
+				}
+				s.Buckets = o
+			case '[':
+				o := []interface{}{}
+				if err := localDec.Decode(&o); err != nil {
+					return err
+				}
+				s.Buckets = o
+			}
+
+		case "doc_count":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.DocCount = &value
+			case float64:
+				f := int64(v)
+				s.DocCount = &f
+			}
+
+		case "meta":
+			if err := dec.Decode(&s.Meta); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewSignificantTermsAggregateBaseVoid returns a SignificantTermsAggregateBaseVoid.

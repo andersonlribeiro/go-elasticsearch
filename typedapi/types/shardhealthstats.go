@@ -15,20 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/healthstatus"
 )
 
 // ShardHealthStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/cluster/health/types.ts#L36-L43
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/cluster/health/types.ts#L36-L43
 type ShardHealthStats struct {
 	ActiveShards       int                       `json:"active_shards"`
 	InitializingShards int                       `json:"initializing_shards"`
@@ -36,6 +40,109 @@ type ShardHealthStats struct {
 	RelocatingShards   int                       `json:"relocating_shards"`
 	Status             healthstatus.HealthStatus `json:"status"`
 	UnassignedShards   int                       `json:"unassigned_shards"`
+}
+
+func (s *ShardHealthStats) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "active_shards":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.ActiveShards = value
+			case float64:
+				f := int(v)
+				s.ActiveShards = f
+			}
+
+		case "initializing_shards":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.InitializingShards = value
+			case float64:
+				f := int(v)
+				s.InitializingShards = f
+			}
+
+		case "primary_active":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.PrimaryActive = value
+			case bool:
+				s.PrimaryActive = v
+			}
+
+		case "relocating_shards":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.RelocatingShards = value
+			case float64:
+				f := int(v)
+				s.RelocatingShards = f
+			}
+
+		case "status":
+			if err := dec.Decode(&s.Status); err != nil {
+				return err
+			}
+
+		case "unassigned_shards":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.UnassignedShards = value
+			case float64:
+				f := int(v)
+				s.UnassignedShards = f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewShardHealthStats returns a ShardHealthStats.

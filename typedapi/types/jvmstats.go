@@ -15,31 +15,120 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // JvmStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/get_memory_stats/types.ts#L50-L63
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/get_memory_stats/types.ts#L50-L63
 type JvmStats struct {
 	// HeapMax Maximum amount of memory available for use by the heap.
-	HeapMax *ByteSize `json:"heap_max,omitempty"`
+	HeapMax ByteSize `json:"heap_max,omitempty"`
 	// HeapMaxInBytes Maximum amount of memory, in bytes, available for use by the heap.
 	HeapMaxInBytes int `json:"heap_max_in_bytes"`
 	// JavaInference Amount of Java heap currently being used for caching inference models.
-	JavaInference *ByteSize `json:"java_inference,omitempty"`
+	JavaInference ByteSize `json:"java_inference,omitempty"`
 	// JavaInferenceInBytes Amount of Java heap, in bytes, currently being used for caching inference
 	// models.
 	JavaInferenceInBytes int `json:"java_inference_in_bytes"`
 	// JavaInferenceMax Maximum amount of Java heap to be used for caching inference models.
-	JavaInferenceMax *ByteSize `json:"java_inference_max,omitempty"`
+	JavaInferenceMax ByteSize `json:"java_inference_max,omitempty"`
 	// JavaInferenceMaxInBytes Maximum amount of Java heap, in bytes, to be used for caching inference
 	// models.
 	JavaInferenceMaxInBytes int `json:"java_inference_max_in_bytes"`
+}
+
+func (s *JvmStats) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "heap_max":
+			if err := dec.Decode(&s.HeapMax); err != nil {
+				return err
+			}
+
+		case "heap_max_in_bytes":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.HeapMaxInBytes = value
+			case float64:
+				f := int(v)
+				s.HeapMaxInBytes = f
+			}
+
+		case "java_inference":
+			if err := dec.Decode(&s.JavaInference); err != nil {
+				return err
+			}
+
+		case "java_inference_in_bytes":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.JavaInferenceInBytes = value
+			case float64:
+				f := int(v)
+				s.JavaInferenceInBytes = f
+			}
+
+		case "java_inference_max":
+			if err := dec.Decode(&s.JavaInferenceMax); err != nil {
+				return err
+			}
+
+		case "java_inference_max_in_bytes":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.JavaInferenceMaxInBytes = value
+			case float64:
+				f := int(v)
+				s.JavaInferenceMaxInBytes = f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewJvmStats returns a JvmStats.

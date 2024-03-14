@@ -15,20 +15,81 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // IntervalsPrefix type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/query_dsl/fulltext.ts#L110-L114
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/query_dsl/fulltext.ts#L218-L233
 type IntervalsPrefix struct {
+	// Analyzer Analyzer used to analyze the `prefix`.
 	Analyzer *string `json:"analyzer,omitempty"`
-	Prefix   string  `json:"prefix"`
+	// Prefix Beginning characters of terms you wish to find in the top-level field.
+	Prefix string `json:"prefix"`
+	// UseField If specified, match intervals from this field rather than the top-level
+	// field.
+	// The `prefix` is normalized using the search analyzer from this field, unless
+	// `analyzer` is specified separately.
 	UseField *string `json:"use_field,omitempty"`
+}
+
+func (s *IntervalsPrefix) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "analyzer":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Analyzer = &o
+
+		case "prefix":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Prefix = o
+
+		case "use_field":
+			if err := dec.Decode(&s.UseField); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewIntervalsPrefix returns a IntervalsPrefix.

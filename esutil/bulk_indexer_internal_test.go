@@ -40,6 +40,7 @@ import (
 	"time"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 )
@@ -525,7 +526,7 @@ func TestBulkIndexer(t *testing.T) {
 		}
 		es, _ := elasticsearch.NewClient(esCfg)
 
-		biCfg := BulkIndexerConfig{NumWorkers: 1, FlushBytes: 28*2, Client: es}
+		biCfg := BulkIndexerConfig{NumWorkers: 1, FlushBytes: 28 * 2, Client: es}
 		if os.Getenv("DEBUG") != "" {
 			biCfg.DebugLogger = log.New(os.Stdout, "", 0)
 		}
@@ -597,6 +598,8 @@ func TestBulkIndexer(t *testing.T) {
 	})
 	t.Run("Worker.writeMeta()", func(t *testing.T) {
 		v := int64(23)
+		ifSeqNo := int64(45)
+		ifPrimaryTerm := int64(67)
 		type args struct {
 			item BulkIndexerItem
 		}
@@ -666,6 +669,28 @@ func TestBulkIndexer(t *testing.T) {
 				`{"index":{"_id":"42","version":23,"version_type":"external","_index":"test"}}` + "\n",
 			},
 			{
+				"with require_alias",
+				args{BulkIndexerItem{
+					Action:       "index",
+					DocumentID:   "42",
+					Index:        "test",
+					RequireAlias: true,
+				}},
+				`{"index":{"_id":"42","_index":"test","require_alias":true}}` + "\n",
+			},
+			{
+				"with version, version_type and require_alias",
+				args{BulkIndexerItem{
+					Action:       "index",
+					DocumentID:   "42",
+					Index:        "test",
+					Version:      &v,
+					VersionType:  "external",
+					RequireAlias: true,
+				}},
+				`{"index":{"_id":"42","version":23,"version_type":"external","_index":"test","require_alias":true}}` + "\n",
+			},
+			{
 				"with retry_on_conflict and bad action",
 				args{BulkIndexerItem{
 					Action:          "index",
@@ -683,6 +708,16 @@ func TestBulkIndexer(t *testing.T) {
 				}},
 				`{"update":{"_id":"1","retry_on_conflict":3}}` + "\n",
 			},
+			{
+				"with if_seq_no and if_primary_term",
+				args{BulkIndexerItem{
+					Action:        "index",
+					DocumentID:    "1",
+					IfSeqNo:       &ifSeqNo,
+					IfPrimaryTerm: &ifPrimaryTerm,
+				}},
+				`{"index":{"_id":"1","if_seq_no":45,"if_primary_term":67}}` + "\n",
+			},
 		}
 		for _, tt := range tests {
 			tt := tt
@@ -690,7 +725,6 @@ func TestBulkIndexer(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				w := &worker{
 					buf: bytes.NewBuffer(make([]byte, 0, 5e+6)),
-					aux: make([]byte, 0, 512),
 				}
 				tt.args.item.marshallMeta()
 				if err := w.writeMeta(&tt.args.item); err != nil {

@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Reloads secure settings.
 package reloadsecuresettings
@@ -29,11 +27,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 const (
@@ -50,14 +50,19 @@ type ReloadSecureSettings struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
-	req *Request
-	raw json.RawMessage
+	req      *Request
+	deferred []func(request *Request) error
+	buf      *gobytes.Buffer
 
 	paramSet int
 
 	nodeid string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewReloadSecureSettings type alias for index.
@@ -75,13 +80,22 @@ func NewReloadSecureSettingsFunc(tp elastictransport.Interface) NewReloadSecureS
 
 // Reloads secure settings.
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/master/secure-settings.html#reloadable-secure-settings
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/secure-settings.html#reloadable-secure-settings
 func New(tp elastictransport.Interface) *ReloadSecureSettings {
 	r := &ReloadSecureSettings{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+
+		buf: gobytes.NewBuffer(nil),
+
+		req: NewRequest(),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -89,7 +103,7 @@ func New(tp elastictransport.Interface) *ReloadSecureSettings {
 
 // Raw takes a json payload as input which is then passed to the http.Request
 // If specified Raw takes precedence on Request method.
-func (r *ReloadSecureSettings) Raw(raw json.RawMessage) *ReloadSecureSettings {
+func (r *ReloadSecureSettings) Raw(raw io.Reader) *ReloadSecureSettings {
 	r.raw = raw
 
 	return r
@@ -111,9 +125,17 @@ func (r *ReloadSecureSettings) HttpRequest(ctx context.Context) (*http.Request, 
 
 	var err error
 
-	if r.raw != nil {
-		r.buf.Write(r.raw)
-	} else if r.req != nil {
+	if len(r.deferred) > 0 {
+		for _, f := range r.deferred {
+			deferredErr := f(r.req)
+			if deferredErr != nil {
+				return nil, deferredErr
+			}
+		}
+	}
+
+	if r.raw == nil && r.req != nil {
+
 		data, err := json.Marshal(r.req)
 
 		if err != nil {
@@ -121,6 +143,11 @@ func (r *ReloadSecureSettings) HttpRequest(ctx context.Context) (*http.Request, 
 		}
 
 		r.buf.Write(data)
+
+	}
+
+	if r.buf.Len() > 0 {
+		r.raw = r.buf
 	}
 
 	r.path.Scheme = "http"
@@ -138,6 +165,9 @@ func (r *ReloadSecureSettings) HttpRequest(ctx context.Context) (*http.Request, 
 		path.WriteString("_nodes")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "nodeid", r.nodeid)
+		}
 		path.WriteString(r.nodeid)
 		path.WriteString("/")
 		path.WriteString("reload_secure_settings")
@@ -153,15 +183,15 @@ func (r *ReloadSecureSettings) HttpRequest(ctx context.Context) (*http.Request, 
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
 
 	if req.Header.Get("Content-Type") == "" {
-		if r.buf.Len() > 0 {
+		if r.raw != nil {
 			req.Header.Set("Content-Type", "application/vnd.elasticsearch+json;compatible-with=8")
 		}
 	}
@@ -177,19 +207,100 @@ func (r *ReloadSecureSettings) HttpRequest(ctx context.Context) (*http.Request, 
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r ReloadSecureSettings) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r ReloadSecureSettings) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "nodes.reload_secure_settings")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "nodes.reload_secure_settings")
+		if reader := instrument.RecordRequestBody(ctx, "nodes.reload_secure_settings", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "nodes.reload_secure_settings")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the ReloadSecureSettings query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the ReloadSecureSettings query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
+}
+
+// Do runs the request through the transport, handle the response and returns a reloadsecuresettings.Response
+func (r ReloadSecureSettings) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "nodes.reload_secure_settings")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
 }
 
 // Header set a key, value pair in the ReloadSecureSettings headers map.
@@ -199,20 +310,29 @@ func (r *ReloadSecureSettings) Header(key, value string) *ReloadSecureSettings {
 	return r
 }
 
-// NodeId A comma-separated list of node IDs to span the reload/reinit call. Should
-// stay empty because reloading usually involves all cluster nodes.
+// NodeId The names of particular nodes in the cluster to target.
 // API Name: nodeid
-func (r *ReloadSecureSettings) NodeId(v string) *ReloadSecureSettings {
+func (r *ReloadSecureSettings) NodeId(nodeid string) *ReloadSecureSettings {
 	r.paramSet |= nodeidMask
-	r.nodeid = v
+	r.nodeid = nodeid
 
 	return r
 }
 
-// Timeout Explicit operation timeout
+// Timeout Period to wait for a response.
+// If no response is received before the timeout expires, the request fails and
+// returns an error.
 // API name: timeout
-func (r *ReloadSecureSettings) Timeout(value string) *ReloadSecureSettings {
-	r.values.Set("timeout", value)
+func (r *ReloadSecureSettings) Timeout(duration string) *ReloadSecureSettings {
+	r.values.Set("timeout", duration)
+
+	return r
+}
+
+// SecureSettingsPassword The password for the Elasticsearch keystore.
+// API name: secure_settings_password
+func (r *ReloadSecureSettings) SecureSettingsPassword(password string) *ReloadSecureSettings {
+	r.req.SecureSettingsPassword = &password
 
 	return r
 }

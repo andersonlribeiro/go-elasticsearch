@@ -15,26 +15,96 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // RecoveryIndexStatus type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/recovery/types.ts#L64-L74
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/recovery/types.ts#L64-L74
 type RecoveryIndexStatus struct {
 	Bytes                      *RecoveryBytes `json:"bytes,omitempty"`
 	Files                      RecoveryFiles  `json:"files"`
 	Size                       RecoveryBytes  `json:"size"`
-	SourceThrottleTime         *Duration      `json:"source_throttle_time,omitempty"`
+	SourceThrottleTime         Duration       `json:"source_throttle_time,omitempty"`
 	SourceThrottleTimeInMillis int64          `json:"source_throttle_time_in_millis"`
-	TargetThrottleTime         *Duration      `json:"target_throttle_time,omitempty"`
+	TargetThrottleTime         Duration       `json:"target_throttle_time,omitempty"`
 	TargetThrottleTimeInMillis int64          `json:"target_throttle_time_in_millis"`
-	TotalTime                  *Duration      `json:"total_time,omitempty"`
+	TotalTime                  Duration       `json:"total_time,omitempty"`
 	TotalTimeInMillis          int64          `json:"total_time_in_millis"`
+}
+
+func (s *RecoveryIndexStatus) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "bytes":
+			if err := dec.Decode(&s.Bytes); err != nil {
+				return err
+			}
+
+		case "files":
+			if err := dec.Decode(&s.Files); err != nil {
+				return err
+			}
+
+		case "size":
+			if err := dec.Decode(&s.Size); err != nil {
+				return err
+			}
+
+		case "source_throttle_time":
+			if err := dec.Decode(&s.SourceThrottleTime); err != nil {
+				return err
+			}
+
+		case "source_throttle_time_in_millis":
+			if err := dec.Decode(&s.SourceThrottleTimeInMillis); err != nil {
+				return err
+			}
+
+		case "target_throttle_time":
+			if err := dec.Decode(&s.TargetThrottleTime); err != nil {
+				return err
+			}
+
+		case "target_throttle_time_in_millis":
+			if err := dec.Decode(&s.TargetThrottleTimeInMillis); err != nil {
+				return err
+			}
+
+		case "total_time":
+			if err := dec.Decode(&s.TotalTime); err != nil {
+				return err
+			}
+
+		case "total_time_in_millis":
+			if err := dec.Decode(&s.TotalTimeInMillis); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewRecoveryIndexStatus returns a RecoveryIndexStatus.

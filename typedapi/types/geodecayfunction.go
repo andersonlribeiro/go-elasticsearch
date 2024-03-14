@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
@@ -31,10 +29,12 @@ import (
 
 // GeoDecayFunction type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/query_dsl/compound.ts#L96-L98
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/query_dsl/compound.ts#L190-L192
 type GeoDecayFunction struct {
-	GeoDecayFunction map[string]DecayPlacementGeoLocationDistance `json:"-"`
-	MultiValueMode   *multivaluemode.MultiValueMode               `json:"multi_value_mode,omitempty"`
+	GeoDecayFunction map[string]DecayPlacementGeoLocationDistance `json:"GeoDecayFunction,omitempty"`
+	// MultiValueMode Determines how the distance is calculated when a field used for computing the
+	// decay contains multiple values.
+	MultiValueMode *multivaluemode.MultiValueMode `json:"multi_value_mode,omitempty"`
 }
 
 // MarhsalJSON overrides marshalling for types with additional properties
@@ -56,6 +56,7 @@ func (s GeoDecayFunction) MarshalJSON() ([]byte, error) {
 	for key, value := range s.GeoDecayFunction {
 		tmp[fmt.Sprintf("%s", key)] = value
 	}
+	delete(tmp, "GeoDecayFunction")
 
 	data, err = json.Marshal(tmp)
 	if err != nil {

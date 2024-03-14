@@ -15,22 +15,117 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // TermSuggestOption type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/search/_types/suggester.ts#L93-L99
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/search/_types/suggester.ts#L93-L99
 type TermSuggestOption struct {
 	CollateMatch *bool   `json:"collate_match,omitempty"`
 	Freq         int64   `json:"freq"`
 	Highlighted  *string `json:"highlighted,omitempty"`
-	Score        float64 `json:"score"`
+	Score        Float64 `json:"score"`
 	Text         string  `json:"text"`
+}
+
+func (s *TermSuggestOption) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "collate_match":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.CollateMatch = &value
+			case bool:
+				s.CollateMatch = &v
+			}
+
+		case "freq":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.Freq = value
+			case float64:
+				f := int64(v)
+				s.Freq = f
+			}
+
+		case "highlighted":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Highlighted = &o
+
+		case "score":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.Score = f
+			case float64:
+				f := Float64(v)
+				s.Score = f
+			}
+
+		case "text":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Text = o
+
+		}
+	}
+	return nil
 }
 
 // NewTermSuggestOption returns a TermSuggestOption.

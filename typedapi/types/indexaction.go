@@ -15,28 +15,81 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/optype"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
 )
 
 // IndexAction type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/watcher/_types/Actions.ts#L256-L265
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/watcher/_types/Actions.ts#L256-L265
 type IndexAction struct {
 	DocId              *string          `json:"doc_id,omitempty"`
 	ExecutionTimeField *string          `json:"execution_time_field,omitempty"`
 	Index              string           `json:"index"`
 	OpType             *optype.OpType   `json:"op_type,omitempty"`
 	Refresh            *refresh.Refresh `json:"refresh,omitempty"`
-	Timeout            *Duration        `json:"timeout,omitempty"`
+	Timeout            Duration         `json:"timeout,omitempty"`
+}
+
+func (s *IndexAction) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "doc_id":
+			if err := dec.Decode(&s.DocId); err != nil {
+				return err
+			}
+
+		case "execution_time_field":
+			if err := dec.Decode(&s.ExecutionTimeField); err != nil {
+				return err
+			}
+
+		case "index":
+			if err := dec.Decode(&s.Index); err != nil {
+				return err
+			}
+
+		case "op_type":
+			if err := dec.Decode(&s.OpType); err != nil {
+				return err
+			}
+
+		case "refresh":
+			if err := dec.Decode(&s.Refresh); err != nil {
+				return err
+			}
+
+		case "timeout":
+			if err := dec.Decode(&s.Timeout); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewIndexAction returns a IndexAction.

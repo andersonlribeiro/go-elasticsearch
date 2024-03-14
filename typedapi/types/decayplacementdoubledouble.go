@@ -15,21 +15,118 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // DecayPlacementdoubledouble type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/query_dsl/compound.ts#L77-L82
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/query_dsl/compound.ts#L153-L172
 type DecayPlacementdoubledouble struct {
-	Decay  *float64 `json:"decay,omitempty"`
-	Offset *float64 `json:"offset,omitempty"`
-	Origin *float64 `json:"origin,omitempty"`
-	Scale  *float64 `json:"scale,omitempty"`
+	// Decay Defines how documents are scored at the distance given at scale.
+	Decay *Float64 `json:"decay,omitempty"`
+	// Offset If defined, the decay function will only compute the decay function for
+	// documents with a distance greater than the defined `offset`.
+	Offset *Float64 `json:"offset,omitempty"`
+	// Origin The point of origin used for calculating distance. Must be given as a number
+	// for numeric field, date for date fields and geo point for geo fields.
+	Origin *Float64 `json:"origin,omitempty"`
+	// Scale Defines the distance from origin + offset at which the computed score will
+	// equal `decay` parameter.
+	Scale *Float64 `json:"scale,omitempty"`
+}
+
+func (s *DecayPlacementdoubledouble) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "decay":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.Decay = &f
+			case float64:
+				f := Float64(v)
+				s.Decay = &f
+			}
+
+		case "offset":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.Offset = &f
+			case float64:
+				f := Float64(v)
+				s.Offset = &f
+			}
+
+		case "origin":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.Origin = &f
+			case float64:
+				f := Float64(v)
+				s.Origin = &f
+			}
+
+		case "scale":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.Scale = &f
+			case float64:
+				f := Float64(v)
+				s.Scale = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewDecayPlacementdoubledouble returns a DecayPlacementdoubledouble.

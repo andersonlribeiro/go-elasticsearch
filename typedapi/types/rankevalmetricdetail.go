@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // RankEvalMetricDetail type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/rank_eval/types.ts#L125-L134
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/rank_eval/types.ts#L125-L134
 type RankEvalMetricDetail struct {
 	// Hits The hits section shows a grouping of the search results with their supplied
 	// ratings
@@ -32,20 +38,74 @@ type RankEvalMetricDetail struct {
 	// MetricDetails The metric_details give additional information about the calculated quality
 	// metric (e.g. how many of the retrieved documents were relevant). The content
 	// varies for each metric but allows for better interpretation of the results
-	MetricDetails map[string]map[string]interface{} `json:"metric_details"`
+	MetricDetails map[string]map[string]json.RawMessage `json:"metric_details"`
 	// MetricScore The metric_score in the details section shows the contribution of this query
 	// to the global quality metric score
-	MetricScore float64 `json:"metric_score"`
+	MetricScore Float64 `json:"metric_score"`
 	// UnratedDocs The unrated_docs section contains an _index and _id entry for each document
 	// in the search result for this query that didn’t have a ratings value. This
 	// can be used to ask the user to supply ratings for these documents
 	UnratedDocs []UnratedDocument `json:"unrated_docs"`
 }
 
+func (s *RankEvalMetricDetail) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "hits":
+			if err := dec.Decode(&s.Hits); err != nil {
+				return err
+			}
+
+		case "metric_details":
+			if s.MetricDetails == nil {
+				s.MetricDetails = make(map[string]map[string]json.RawMessage, 0)
+			}
+			if err := dec.Decode(&s.MetricDetails); err != nil {
+				return err
+			}
+
+		case "metric_score":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.MetricScore = f
+			case float64:
+				f := Float64(v)
+				s.MetricScore = f
+			}
+
+		case "unrated_docs":
+			if err := dec.Decode(&s.UnratedDocs); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
 // NewRankEvalMetricDetail returns a RankEvalMetricDetail.
 func NewRankEvalMetricDetail() *RankEvalMetricDetail {
 	r := &RankEvalMetricDetail{
-		MetricDetails: make(map[string]map[string]interface{}, 0),
+		MetricDetails: make(map[string]map[string]json.RawMessage, 0),
 	}
 
 	return r

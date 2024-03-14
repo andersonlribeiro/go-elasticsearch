@@ -15,21 +15,103 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // SpanFirstQuery type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/query_dsl/span.ts#L35-L38
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/query_dsl/span.ts#L43-L52
 type SpanFirstQuery struct {
-	Boost      *float32   `json:"boost,omitempty"`
-	End        int        `json:"end"`
+	// Boost Floating point number used to decrease or increase the relevance scores of
+	// the query.
+	// Boost values are relative to the default value of 1.0.
+	// A boost value between 0 and 1.0 decreases the relevance score.
+	// A value greater than 1.0 increases the relevance score.
+	Boost *float32 `json:"boost,omitempty"`
+	// End Controls the maximum end position permitted in a match.
+	End int `json:"end"`
+	// Match Can be any other span type query.
 	Match      *SpanQuery `json:"match,omitempty"`
 	QueryName_ *string    `json:"_name,omitempty"`
+}
+
+func (s *SpanFirstQuery) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "boost":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 32)
+				if err != nil {
+					return err
+				}
+				f := float32(value)
+				s.Boost = &f
+			case float64:
+				f := float32(v)
+				s.Boost = &f
+			}
+
+		case "end":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.End = value
+			case float64:
+				f := int(v)
+				s.End = f
+			}
+
+		case "match":
+			if err := dec.Decode(&s.Match); err != nil {
+				return err
+			}
+
+		case "_name":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.QueryName_ = &o
+
+		}
+	}
+	return nil
 }
 
 // NewSpanFirstQuery returns a SpanFirstQuery.

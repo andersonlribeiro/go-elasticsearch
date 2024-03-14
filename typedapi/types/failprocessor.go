@@ -15,23 +15,125 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // FailProcessor type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ingest/_types/Processors.ts#L211-L213
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ingest/_types/Processors.ts#L648-L654
 type FailProcessor struct {
-	Description   *string              `json:"description,omitempty"`
-	If            *string              `json:"if,omitempty"`
-	IgnoreFailure *bool                `json:"ignore_failure,omitempty"`
-	Message       string               `json:"message"`
-	OnFailure     []ProcessorContainer `json:"on_failure,omitempty"`
-	Tag           *string              `json:"tag,omitempty"`
+	// Description Description of the processor.
+	// Useful for describing the purpose of the processor or its configuration.
+	Description *string `json:"description,omitempty"`
+	// If Conditionally execute the processor.
+	If *string `json:"if,omitempty"`
+	// IgnoreFailure Ignore failures for the processor.
+	IgnoreFailure *bool `json:"ignore_failure,omitempty"`
+	// Message The error message thrown by the processor.
+	// Supports template snippets.
+	Message string `json:"message"`
+	// OnFailure Handle failures for the processor.
+	OnFailure []ProcessorContainer `json:"on_failure,omitempty"`
+	// Tag Identifier for the processor.
+	// Useful for debugging and metrics.
+	Tag *string `json:"tag,omitempty"`
+}
+
+func (s *FailProcessor) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "description":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Description = &o
+
+		case "if":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.If = &o
+
+		case "ignore_failure":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.IgnoreFailure = &value
+			case bool:
+				s.IgnoreFailure = &v
+			}
+
+		case "message":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Message = o
+
+		case "on_failure":
+			if err := dec.Decode(&s.OnFailure); err != nil {
+				return err
+			}
+
+		case "tag":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Tag = &o
+
+		}
+	}
+	return nil
 }
 
 // NewFailProcessor returns a FailProcessor.

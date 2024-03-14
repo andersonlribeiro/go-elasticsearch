@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // AllField type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/mapping/meta-fields.ts#L29-L40
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/mapping/meta-fields.ts#L29-L40
 type AllField struct {
 	Analyzer                 string `json:"analyzer"`
 	Enabled                  bool   `json:"enabled"`
@@ -36,6 +42,160 @@ type AllField struct {
 	StoreTermVectorPayloads  bool   `json:"store_term_vector_payloads"`
 	StoreTermVectorPositions bool   `json:"store_term_vector_positions"`
 	StoreTermVectors         bool   `json:"store_term_vectors"`
+}
+
+func (s *AllField) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "analyzer":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Analyzer = o
+
+		case "enabled":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Enabled = value
+			case bool:
+				s.Enabled = v
+			}
+
+		case "omit_norms":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.OmitNorms = value
+			case bool:
+				s.OmitNorms = v
+			}
+
+		case "search_analyzer":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.SearchAnalyzer = o
+
+		case "similarity":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Similarity = o
+
+		case "store":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Store = value
+			case bool:
+				s.Store = v
+			}
+
+		case "store_term_vector_offsets":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.StoreTermVectorOffsets = value
+			case bool:
+				s.StoreTermVectorOffsets = v
+			}
+
+		case "store_term_vector_payloads":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.StoreTermVectorPayloads = value
+			case bool:
+				s.StoreTermVectorPayloads = v
+			}
+
+		case "store_term_vector_positions":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.StoreTermVectorPositions = value
+			case bool:
+				s.StoreTermVectorPositions = v
+			}
+
+		case "store_term_vectors":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.StoreTermVectors = value
+			case bool:
+				s.StoreTermVectors = v
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewAllField returns a AllField.

@@ -15,19 +15,69 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // ClusterIngest type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/cluster/stats/types.ts#L144-L147
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/cluster/stats/types.ts#L270-L273
 type ClusterIngest struct {
 	NumberOfPipelines int                         `json:"number_of_pipelines"`
 	ProcessorStats    map[string]ClusterProcessor `json:"processor_stats"`
+}
+
+func (s *ClusterIngest) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "number_of_pipelines":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.NumberOfPipelines = value
+			case float64:
+				f := int(v)
+				s.NumberOfPipelines = f
+			}
+
+		case "processor_stats":
+			if s.ProcessorStats == nil {
+				s.ProcessorStats = make(map[string]ClusterProcessor, 0)
+			}
+			if err := dec.Decode(&s.ProcessorStats); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewClusterIngest returns a ClusterIngest.

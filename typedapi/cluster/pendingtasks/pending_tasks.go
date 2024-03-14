@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Returns a list of any cluster-level changes (e.g. create index, update
 // mapping,
@@ -26,8 +24,8 @@
 package pendingtasks
 
 import (
-	gobytes "bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -38,6 +36,7 @@ import (
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // ErrBuildPath is returned in case of missing parameters within the build of the request.
@@ -50,9 +49,13 @@ type PendingTasks struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewPendingTasks type alias for index.
@@ -72,13 +75,18 @@ func NewPendingTasksFunc(tp elastictransport.Interface) NewPendingTasks {
 // mapping,
 // allocate or fail shard) which have not yet been executed.
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/{branch}/cluster-pending.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-pending.html
 func New(tp elastictransport.Interface) *PendingTasks {
 	r := &PendingTasks{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -113,9 +121,9 @@ func (r *PendingTasks) HttpRequest(ctx context.Context) (*http.Request, error) {
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -131,25 +139,116 @@ func (r *PendingTasks) HttpRequest(ctx context.Context) (*http.Request, error) {
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r PendingTasks) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r PendingTasks) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "cluster.pending_tasks")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "cluster.pending_tasks")
+		if reader := instrument.RecordRequestBody(ctx, "cluster.pending_tasks", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "cluster.pending_tasks")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the PendingTasks query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the PendingTasks query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a pendingtasks.Response
+func (r PendingTasks) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "cluster.pending_tasks")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r PendingTasks) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r PendingTasks) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "cluster.pending_tasks")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -164,6 +263,14 @@ func (r PendingTasks) IsSuccess(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the PendingTasks query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
+	}
+
 	return false, nil
 }
 
@@ -174,19 +281,21 @@ func (r *PendingTasks) Header(key, value string) *PendingTasks {
 	return r
 }
 
-// Local Return local information, do not retrieve the state from master node
-// (default: false)
+// Local If `true`, the request retrieves information from the local node only.
+// If `false`, information is retrieved from the master node.
 // API name: local
-func (r *PendingTasks) Local(b bool) *PendingTasks {
-	r.values.Set("local", strconv.FormatBool(b))
+func (r *PendingTasks) Local(local bool) *PendingTasks {
+	r.values.Set("local", strconv.FormatBool(local))
 
 	return r
 }
 
-// MasterTimeout Specify timeout for connection to master
+// MasterTimeout Period to wait for a connection to the master node.
+// If no response is received before the timeout expires, the request fails and
+// returns an error.
 // API name: master_timeout
-func (r *PendingTasks) MasterTimeout(value string) *PendingTasks {
-	r.values.Set("master_timeout", value)
+func (r *PendingTasks) MasterTimeout(duration string) *PendingTasks {
+	r.values.Set("master_timeout", duration)
 
 	return r
 }

@@ -15,20 +15,60 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // Phase type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ilm/_types/Phase.ts#L25-L33
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ilm/_types/Phase.ts#L25-L36
 type Phase struct {
-	Actions        *IlmActions     `json:"actions,omitempty"`
+	Actions        json.RawMessage `json:"actions,omitempty"`
 	Configurations *Configurations `json:"configurations,omitempty"`
-	MinAge         Duration        `json:"min_age,omitempty"`
+	MinAge         *Duration       `json:"min_age,omitempty"`
+}
+
+func (s *Phase) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "actions":
+			if err := dec.Decode(&s.Actions); err != nil {
+				return err
+			}
+
+		case "configurations":
+			if err := dec.Decode(&s.Configurations); err != nil {
+				return err
+			}
+
+		case "min_age":
+			if err := dec.Decode(&s.MinAge); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewPhase returns a Phase.

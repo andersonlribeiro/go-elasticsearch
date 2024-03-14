@@ -15,24 +15,166 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // PipelineSettings type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/logstash/_types/Pipeline.ts#L28-L36
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/logstash/_types/Pipeline.ts#L28-L59
 type PipelineSettings struct {
-	PipelineBatchDelay    int    `json:"pipeline.batch.delay"`
-	PipelineBatchSize     int    `json:"pipeline.batch.size"`
-	PipelineWorkers       int    `json:"pipeline.workers"`
-	QueueCheckpointWrites int    `json:"queue.checkpoint.writes"`
-	QueueMaxBytesNumber   int    `json:"queue.max_bytes.number"`
-	QueueMaxBytesUnits    string `json:"queue.max_bytes.units"`
-	QueueType             string `json:"queue.type"`
+	// PipelineBatchDelay When creating pipeline event batches, how long in milliseconds to wait for
+	// each event before dispatching an undersized batch to pipeline workers.
+	PipelineBatchDelay int `json:"pipeline.batch.delay"`
+	// PipelineBatchSize The maximum number of events an individual worker thread will collect from
+	// inputs before attempting to execute its filters and outputs.
+	PipelineBatchSize int `json:"pipeline.batch.size"`
+	// PipelineWorkers The number of workers that will, in parallel, execute the filter and output
+	// stages of the pipeline.
+	PipelineWorkers int `json:"pipeline.workers"`
+	// QueueCheckpointWrites The maximum number of written events before forcing a checkpoint when
+	// persistent queues are enabled (`queue.type: persisted`).
+	QueueCheckpointWrites int `json:"queue.checkpoint.writes"`
+	// QueueMaxBytesNumber The total capacity of the queue (`queue.type: persisted`) in number of bytes.
+	QueueMaxBytesNumber int `json:"queue.max_bytes.number"`
+	// QueueMaxBytesUnits The total capacity of the queue (`queue.type: persisted`) in terms of units
+	// of bytes.
+	QueueMaxBytesUnits string `json:"queue.max_bytes.units"`
+	// QueueType The internal queuing model to use for event buffering.
+	QueueType string `json:"queue.type"`
+}
+
+func (s *PipelineSettings) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "pipeline.batch.delay":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.PipelineBatchDelay = value
+			case float64:
+				f := int(v)
+				s.PipelineBatchDelay = f
+			}
+
+		case "pipeline.batch.size":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.PipelineBatchSize = value
+			case float64:
+				f := int(v)
+				s.PipelineBatchSize = f
+			}
+
+		case "pipeline.workers":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.PipelineWorkers = value
+			case float64:
+				f := int(v)
+				s.PipelineWorkers = f
+			}
+
+		case "queue.checkpoint.writes":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.QueueCheckpointWrites = value
+			case float64:
+				f := int(v)
+				s.QueueCheckpointWrites = f
+			}
+
+		case "queue.max_bytes.number":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.QueueMaxBytesNumber = value
+			case float64:
+				f := int(v)
+				s.QueueMaxBytesNumber = f
+			}
+
+		case "queue.max_bytes.units":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.QueueMaxBytesUnits = o
+
+		case "queue.type":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.QueueType = o
+
+		}
+	}
+	return nil
 }
 
 // NewPipelineSettings returns a PipelineSettings.

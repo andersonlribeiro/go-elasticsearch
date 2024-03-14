@@ -15,26 +15,84 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // SettingsSimilarityLmd type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/IndexSettings.ts#L206-L209
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/IndexSettings.ts#L209-L212
 type SettingsSimilarityLmd struct {
 	Mu   int    `json:"mu"`
 	Type string `json:"type,omitempty"`
 }
 
+func (s *SettingsSimilarityLmd) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "mu":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Mu = value
+			case float64:
+				f := int(v)
+				s.Mu = f
+			}
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
+// MarshalJSON override marshalling to include literal value
+func (s SettingsSimilarityLmd) MarshalJSON() ([]byte, error) {
+	type innerSettingsSimilarityLmd SettingsSimilarityLmd
+	tmp := innerSettingsSimilarityLmd{
+		Mu:   s.Mu,
+		Type: s.Type,
+	}
+
+	tmp.Type = "LMDirichlet"
+
+	return json.Marshal(tmp)
+}
+
 // NewSettingsSimilarityLmd returns a SettingsSimilarityLmd.
 func NewSettingsSimilarityLmd() *SettingsSimilarityLmd {
 	r := &SettingsSimilarityLmd{}
-
-	r.Type = "LMDirichlet"
 
 	return r
 }

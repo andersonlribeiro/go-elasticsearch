@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Allows to simulate a pipeline with example documents.
 package simulate
@@ -29,12 +27,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 const (
@@ -51,14 +51,19 @@ type Simulate struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
-	req *Request
-	raw json.RawMessage
+	req      *Request
+	deferred []func(request *Request) error
+	buf      *gobytes.Buffer
 
 	paramSet int
 
 	id string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewSimulate type alias for index.
@@ -76,13 +81,22 @@ func NewSimulateFunc(tp elastictransport.Interface) NewSimulate {
 
 // Allows to simulate a pipeline with example documents.
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/master/simulate-pipeline-api.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/simulate-pipeline-api.html
 func New(tp elastictransport.Interface) *Simulate {
 	r := &Simulate{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+
+		buf: gobytes.NewBuffer(nil),
+
+		req: NewRequest(),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -90,7 +104,7 @@ func New(tp elastictransport.Interface) *Simulate {
 
 // Raw takes a json payload as input which is then passed to the http.Request
 // If specified Raw takes precedence on Request method.
-func (r *Simulate) Raw(raw json.RawMessage) *Simulate {
+func (r *Simulate) Raw(raw io.Reader) *Simulate {
 	r.raw = raw
 
 	return r
@@ -112,9 +126,17 @@ func (r *Simulate) HttpRequest(ctx context.Context) (*http.Request, error) {
 
 	var err error
 
-	if r.raw != nil {
-		r.buf.Write(r.raw)
-	} else if r.req != nil {
+	if len(r.deferred) > 0 {
+		for _, f := range r.deferred {
+			deferredErr := f(r.req)
+			if deferredErr != nil {
+				return nil, deferredErr
+			}
+		}
+	}
+
+	if r.raw == nil && r.req != nil {
+
 		data, err := json.Marshal(r.req)
 
 		if err != nil {
@@ -122,6 +144,11 @@ func (r *Simulate) HttpRequest(ctx context.Context) (*http.Request, error) {
 		}
 
 		r.buf.Write(data)
+
+	}
+
+	if r.buf.Len() > 0 {
+		r.raw = r.buf
 	}
 
 	r.path.Scheme = "http"
@@ -143,6 +170,9 @@ func (r *Simulate) HttpRequest(ctx context.Context) (*http.Request, error) {
 		path.WriteString("pipeline")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "id", r.id)
+		}
 		path.WriteString(r.id)
 		path.WriteString("/")
 		path.WriteString("_simulate")
@@ -158,15 +188,15 @@ func (r *Simulate) HttpRequest(ctx context.Context) (*http.Request, error) {
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
 
 	if req.Header.Get("Content-Type") == "" {
-		if r.buf.Len() > 0 {
+		if r.raw != nil {
 			req.Header.Set("Content-Type", "application/vnd.elasticsearch+json;compatible-with=8")
 		}
 	}
@@ -182,19 +212,100 @@ func (r *Simulate) HttpRequest(ctx context.Context) (*http.Request, error) {
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r Simulate) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r Simulate) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "ingest.simulate")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "ingest.simulate")
+		if reader := instrument.RecordRequestBody(ctx, "ingest.simulate", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "ingest.simulate")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the Simulate query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the Simulate query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
+}
+
+// Do runs the request through the transport, handle the response and returns a simulate.Response
+func (r Simulate) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "ingest.simulate")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
 }
 
 // Header set a key, value pair in the Simulate headers map.
@@ -204,19 +315,43 @@ func (r *Simulate) Header(key, value string) *Simulate {
 	return r
 }
 
-// Id Pipeline ID
+// Id Pipeline to test.
+// If you don’t specify a `pipeline` in the request body, this parameter is
+// required.
 // API Name: id
-func (r *Simulate) Id(v string) *Simulate {
+func (r *Simulate) Id(id string) *Simulate {
 	r.paramSet |= idMask
-	r.id = v
+	r.id = id
 
 	return r
 }
 
-// Verbose Verbose mode. Display data output for each processor in executed pipeline
+// Verbose If `true`, the response includes output data for each processor in the
+// executed pipeline.
 // API name: verbose
-func (r *Simulate) Verbose(b bool) *Simulate {
-	r.values.Set("verbose", strconv.FormatBool(b))
+func (r *Simulate) Verbose(verbose bool) *Simulate {
+	r.values.Set("verbose", strconv.FormatBool(verbose))
+
+	return r
+}
+
+// Docs Sample documents to test in the pipeline.
+// API name: docs
+func (r *Simulate) Docs(docs ...types.Document) *Simulate {
+	r.req.Docs = docs
+
+	return r
+}
+
+// Pipeline Pipeline to test.
+// If you don’t specify the `pipeline` request path parameter, this parameter is
+// required.
+// If you specify both this and the request path parameter, the API only uses
+// the request path parameter.
+// API name: pipeline
+func (r *Simulate) Pipeline(pipeline *types.IngestPipeline) *Simulate {
+
+	r.req.Pipeline = pipeline
 
 	return r
 }

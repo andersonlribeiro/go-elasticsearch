@@ -15,20 +15,29 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 // IndexTemplateMapping type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/put_index_template/IndicesPutIndexTemplateRequest.ts#L60-L64
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/put_index_template/IndicesPutIndexTemplateRequest.ts#L97-L119
 type IndexTemplateMapping struct {
-	Aliases  map[string]Alias `json:"aliases,omitempty"`
-	Mappings *TypeMapping     `json:"mappings,omitempty"`
-	Settings *IndexSettings   `json:"settings,omitempty"`
+	// Aliases Aliases to add.
+	// If the index template includes a `data_stream` object, these are data stream
+	// aliases.
+	// Otherwise, these are index aliases.
+	// Data stream aliases ignore the `index_routing`, `routing`, and
+	// `search_routing` options.
+	Aliases   map[string]Alias     `json:"aliases,omitempty"`
+	Lifecycle *DataStreamLifecycle `json:"lifecycle,omitempty"`
+	// Mappings Mapping for fields in the index.
+	// If specified, this mapping can include field names, field data types, and
+	// mapping parameters.
+	Mappings *TypeMapping `json:"mappings,omitempty"`
+	// Settings Configuration options for the index.
+	Settings *IndexSettings `json:"settings,omitempty"`
 }
 
 // NewIndexTemplateMapping returns a IndexTemplateMapping.

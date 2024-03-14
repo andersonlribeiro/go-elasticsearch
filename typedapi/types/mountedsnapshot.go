@@ -15,20 +15,71 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // MountedSnapshot type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/searchable_snapshots/mount/types.ts#L23-L27
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/searchable_snapshots/mount/types.ts#L23-L27
 type MountedSnapshot struct {
 	Indices  []string        `json:"indices"`
 	Shards   ShardStatistics `json:"shards"`
 	Snapshot string          `json:"snapshot"`
+}
+
+func (s *MountedSnapshot) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "indices":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := new(string)
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.Indices = append(s.Indices, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.Indices); err != nil {
+					return err
+				}
+			}
+
+		case "shards":
+			if err := dec.Decode(&s.Shards); err != nil {
+				return err
+			}
+
+		case "snapshot":
+			if err := dec.Decode(&s.Snapshot); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewMountedSnapshot returns a MountedSnapshot.

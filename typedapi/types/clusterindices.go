@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // ClusterIndices type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/cluster/stats/types.ts#L63-L94
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/cluster/stats/types.ts#L74-L107
 type ClusterIndices struct {
 	// Analysis Contains statistics about analyzers and analyzer components used in selected
 	// nodes.
@@ -46,8 +52,95 @@ type ClusterIndices struct {
 	// Shards Contains statistics about indices with shards assigned to selected nodes.
 	Shards ClusterIndicesShards `json:"shards"`
 	// Store Contains statistics about the size of shards assigned to selected nodes.
-	Store    StoreStats        `json:"store"`
+	Store StoreStats `json:"store"`
+	// Versions Contains statistics about analyzers and analyzer components used in selected
+	// nodes.
 	Versions []IndicesVersions `json:"versions,omitempty"`
+}
+
+func (s *ClusterIndices) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "analysis":
+			if err := dec.Decode(&s.Analysis); err != nil {
+				return err
+			}
+
+		case "completion":
+			if err := dec.Decode(&s.Completion); err != nil {
+				return err
+			}
+
+		case "count":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.Count = value
+			case float64:
+				f := int64(v)
+				s.Count = f
+			}
+
+		case "docs":
+			if err := dec.Decode(&s.Docs); err != nil {
+				return err
+			}
+
+		case "fielddata":
+			if err := dec.Decode(&s.Fielddata); err != nil {
+				return err
+			}
+
+		case "mappings":
+			if err := dec.Decode(&s.Mappings); err != nil {
+				return err
+			}
+
+		case "query_cache":
+			if err := dec.Decode(&s.QueryCache); err != nil {
+				return err
+			}
+
+		case "segments":
+			if err := dec.Decode(&s.Segments); err != nil {
+				return err
+			}
+
+		case "shards":
+			if err := dec.Decode(&s.Shards); err != nil {
+				return err
+			}
+
+		case "store":
+			if err := dec.Decode(&s.Store); err != nil {
+				return err
+			}
+
+		case "versions":
+			if err := dec.Decode(&s.Versions); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewClusterIndices returns a ClusterIndices.

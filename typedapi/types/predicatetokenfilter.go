@@ -15,27 +15,110 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // PredicateTokenFilter type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/analysis/token_filters.ts#L295-L298
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/analysis/token_filters.ts#L296-L299
 type PredicateTokenFilter struct {
 	Script  Script  `json:"script"`
 	Type    string  `json:"type,omitempty"`
 	Version *string `json:"version,omitempty"`
 }
 
+func (s *PredicateTokenFilter) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "script":
+			message := json.RawMessage{}
+			if err := dec.Decode(&message); err != nil {
+				return err
+			}
+			keyDec := json.NewDecoder(bytes.NewReader(message))
+			for {
+				t, err := keyDec.Token()
+				if err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+					return err
+				}
+
+				switch t {
+
+				case "lang", "options", "source":
+					o := NewInlineScript()
+					localDec := json.NewDecoder(bytes.NewReader(message))
+					if err := localDec.Decode(&o); err != nil {
+						return err
+					}
+					s.Script = o
+
+				case "id":
+					o := NewStoredScriptId()
+					localDec := json.NewDecoder(bytes.NewReader(message))
+					if err := localDec.Decode(&o); err != nil {
+						return err
+					}
+					s.Script = o
+
+				}
+			}
+
+		case "type":
+			if err := dec.Decode(&s.Type); err != nil {
+				return err
+			}
+
+		case "version":
+			if err := dec.Decode(&s.Version); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
+// MarshalJSON override marshalling to include literal value
+func (s PredicateTokenFilter) MarshalJSON() ([]byte, error) {
+	type innerPredicateTokenFilter PredicateTokenFilter
+	tmp := innerPredicateTokenFilter{
+		Script:  s.Script,
+		Type:    s.Type,
+		Version: s.Version,
+	}
+
+	tmp.Type = "predicate_token_filter"
+
+	return json.Marshal(tmp)
+}
+
 // NewPredicateTokenFilter returns a PredicateTokenFilter.
 func NewPredicateTokenFilter() *PredicateTokenFilter {
 	r := &PredicateTokenFilter{}
-
-	r.Type = "predicate_token_filter"
 
 	return r
 }

@@ -15,20 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 // DataframeRegressionSummary type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/evaluate_data_frame/types.ts#L39-L44
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/evaluate_data_frame/types.ts#L68-L85
 type DataframeRegressionSummary struct {
-	Huber    *DataframeEvaluationValue `json:"huber,omitempty"`
-	Mse      *DataframeEvaluationValue `json:"mse,omitempty"`
-	Msle     *DataframeEvaluationValue `json:"msle,omitempty"`
+	// Huber Pseudo Huber loss function.
+	Huber *DataframeEvaluationValue `json:"huber,omitempty"`
+	// Mse Average squared difference between the predicted values and the actual
+	// (`ground truth`) value.
+	Mse *DataframeEvaluationValue `json:"mse,omitempty"`
+	// Msle Average squared difference between the logarithm of the predicted values and
+	// the logarithm of the actual (`ground truth`) value.
+	Msle *DataframeEvaluationValue `json:"msle,omitempty"`
+	// RSquared Proportion of the variance in the dependent variable that is predictable from
+	// the independent variables.
 	RSquared *DataframeEvaluationValue `json:"r_squared,omitempty"`
 }
 

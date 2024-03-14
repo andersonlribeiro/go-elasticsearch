@@ -15,20 +15,91 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // GarbageCollectorTotal type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/_types/Stats.ts#L361-L365
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/_types/Stats.ts#L930-L943
 type GarbageCollectorTotal struct {
-	CollectionCount        *int64  `json:"collection_count,omitempty"`
-	CollectionTime         *string `json:"collection_time,omitempty"`
-	CollectionTimeInMillis *int64  `json:"collection_time_in_millis,omitempty"`
+	// CollectionCount Total number of JVM garbage collectors that collect objects.
+	CollectionCount *int64 `json:"collection_count,omitempty"`
+	// CollectionTime Total time spent by JVM collecting objects.
+	CollectionTime *string `json:"collection_time,omitempty"`
+	// CollectionTimeInMillis Total time, in milliseconds, spent by JVM collecting objects.
+	CollectionTimeInMillis *int64 `json:"collection_time_in_millis,omitempty"`
+}
+
+func (s *GarbageCollectorTotal) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "collection_count":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.CollectionCount = &value
+			case float64:
+				f := int64(v)
+				s.CollectionCount = &f
+			}
+
+		case "collection_time":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.CollectionTime = &o
+
+		case "collection_time_in_millis":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.CollectionTimeInMillis = &value
+			case float64:
+				f := int64(v)
+				s.CollectionTimeInMillis = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewGarbageCollectorTotal returns a GarbageCollectorTotal.

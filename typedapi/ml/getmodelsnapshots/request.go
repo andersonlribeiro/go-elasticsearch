@@ -15,34 +15,36 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package getmodelsnapshots
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // Request holds the request body struct for the package getmodelsnapshots
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/get_model_snapshots/MlGetModelSnapshotsRequest.ts#L26-L96
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/get_model_snapshots/MlGetModelSnapshotsRequest.ts#L26-L96
 type Request struct {
 
 	// Desc Refer to the description for the `desc` query parameter.
 	Desc *bool `json:"desc,omitempty"`
 	// End Refer to the description for the `end` query parameter.
-	End  *types.DateTime `json:"end,omitempty"`
-	Page *types.Page     `json:"page,omitempty"`
+	End  types.DateTime `json:"end,omitempty"`
+	Page *types.Page    `json:"page,omitempty"`
 	// Sort Refer to the description for the `sort` query parameter.
 	Sort *string `json:"sort,omitempty"`
 	// Start Refer to the description for the `start` query parameter.
-	Start *types.DateTime `json:"start,omitempty"`
+	Start types.DateTime `json:"start,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -52,7 +54,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -61,4 +63,57 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "desc":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Desc = &value
+			case bool:
+				s.Desc = &v
+			}
+
+		case "end":
+			if err := dec.Decode(&s.End); err != nil {
+				return err
+			}
+
+		case "page":
+			if err := dec.Decode(&s.Page); err != nil {
+				return err
+			}
+
+		case "sort":
+			if err := dec.Decode(&s.Sort); err != nil {
+				return err
+			}
+
+		case "start":
+			if err := dec.Decode(&s.Start); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }

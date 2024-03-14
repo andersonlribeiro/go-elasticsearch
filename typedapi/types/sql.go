@@ -15,21 +15,91 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // Sql type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/xpack/usage/types.ts#L368-L371
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/xpack/usage/types.ts#L386-L389
 type Sql struct {
 	Available bool                  `json:"available"`
 	Enabled   bool                  `json:"enabled"`
 	Features  map[string]int        `json:"features"`
 	Queries   map[string]XpackQuery `json:"queries"`
+}
+
+func (s *Sql) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "available":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Available = value
+			case bool:
+				s.Available = v
+			}
+
+		case "enabled":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Enabled = value
+			case bool:
+				s.Enabled = v
+			}
+
+		case "features":
+			if s.Features == nil {
+				s.Features = make(map[string]int, 0)
+			}
+			if err := dec.Decode(&s.Features); err != nil {
+				return err
+			}
+
+		case "queries":
+			if s.Queries == nil {
+				s.Queries = make(map[string]XpackQuery, 0)
+			}
+			if err := dec.Decode(&s.Queries); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewSql returns a Sql.

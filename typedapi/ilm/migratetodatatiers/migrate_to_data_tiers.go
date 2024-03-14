@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Migrates the indices and ILM policies away from custom node attribute
 // allocation routing to data tiers routing
@@ -30,12 +28,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // ErrBuildPath is returned in case of missing parameters within the build of the request.
@@ -48,12 +48,17 @@ type MigrateToDataTiers struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
-	req *Request
-	raw json.RawMessage
+	req      *Request
+	deferred []func(request *Request) error
+	buf      *gobytes.Buffer
 
 	paramSet int
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewMigrateToDataTiers type alias for index.
@@ -78,7 +83,16 @@ func New(tp elastictransport.Interface) *MigrateToDataTiers {
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+
+		buf: gobytes.NewBuffer(nil),
+
+		req: NewRequest(),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -86,7 +100,7 @@ func New(tp elastictransport.Interface) *MigrateToDataTiers {
 
 // Raw takes a json payload as input which is then passed to the http.Request
 // If specified Raw takes precedence on Request method.
-func (r *MigrateToDataTiers) Raw(raw json.RawMessage) *MigrateToDataTiers {
+func (r *MigrateToDataTiers) Raw(raw io.Reader) *MigrateToDataTiers {
 	r.raw = raw
 
 	return r
@@ -108,9 +122,17 @@ func (r *MigrateToDataTiers) HttpRequest(ctx context.Context) (*http.Request, er
 
 	var err error
 
-	if r.raw != nil {
-		r.buf.Write(r.raw)
-	} else if r.req != nil {
+	if len(r.deferred) > 0 {
+		for _, f := range r.deferred {
+			deferredErr := f(r.req)
+			if deferredErr != nil {
+				return nil, deferredErr
+			}
+		}
+	}
+
+	if r.raw == nil && r.req != nil {
+
 		data, err := json.Marshal(r.req)
 
 		if err != nil {
@@ -118,6 +140,11 @@ func (r *MigrateToDataTiers) HttpRequest(ctx context.Context) (*http.Request, er
 		}
 
 		r.buf.Write(data)
+
+	}
+
+	if r.buf.Len() > 0 {
+		r.raw = r.buf
 	}
 
 	r.path.Scheme = "http"
@@ -140,15 +167,15 @@ func (r *MigrateToDataTiers) HttpRequest(ctx context.Context) (*http.Request, er
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
 
 	if req.Header.Get("Content-Type") == "" {
-		if r.buf.Len() > 0 {
+		if r.raw != nil {
 			req.Header.Set("Content-Type", "application/vnd.elasticsearch+json;compatible-with=8")
 		}
 	}
@@ -164,19 +191,100 @@ func (r *MigrateToDataTiers) HttpRequest(ctx context.Context) (*http.Request, er
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r MigrateToDataTiers) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r MigrateToDataTiers) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "ilm.migrate_to_data_tiers")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "ilm.migrate_to_data_tiers")
+		if reader := instrument.RecordRequestBody(ctx, "ilm.migrate_to_data_tiers", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "ilm.migrate_to_data_tiers")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the MigrateToDataTiers query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the MigrateToDataTiers query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
+}
+
+// Do runs the request through the transport, handle the response and returns a migratetodatatiers.Response
+func (r MigrateToDataTiers) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "ilm.migrate_to_data_tiers")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
 }
 
 // Header set a key, value pair in the MigrateToDataTiers headers map.
@@ -191,8 +299,24 @@ func (r *MigrateToDataTiers) Header(key, value string) *MigrateToDataTiers {
 // This provides a way to retrieve the indices and ILM policies that need to be
 // migrated.
 // API name: dry_run
-func (r *MigrateToDataTiers) DryRun(b bool) *MigrateToDataTiers {
-	r.values.Set("dry_run", strconv.FormatBool(b))
+func (r *MigrateToDataTiers) DryRun(dryrun bool) *MigrateToDataTiers {
+	r.values.Set("dry_run", strconv.FormatBool(dryrun))
+
+	return r
+}
+
+// API name: legacy_template_to_delete
+func (r *MigrateToDataTiers) LegacyTemplateToDelete(legacytemplatetodelete string) *MigrateToDataTiers {
+
+	r.req.LegacyTemplateToDelete = &legacytemplatetodelete
+
+	return r
+}
+
+// API name: node_attribute
+func (r *MigrateToDataTiers) NodeAttribute(nodeattribute string) *MigrateToDataTiers {
+
+	r.req.NodeAttribute = &nodeattribute
 
 	return r
 }

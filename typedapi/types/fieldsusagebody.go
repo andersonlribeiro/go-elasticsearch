@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
@@ -29,7 +27,7 @@ import (
 
 // FieldsUsageBody type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/field_usage_stats/IndicesFieldUsageStatsResponse.ts#L32-L36
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/field_usage_stats/IndicesFieldUsageStatsResponse.ts#L32-L36
 type FieldsUsageBody struct {
 	FieldsUsageBody map[string]UsageStatsIndex `json:"-"`
 	Shards_         ShardStatistics            `json:"_shards"`
@@ -54,6 +52,7 @@ func (s FieldsUsageBody) MarshalJSON() ([]byte, error) {
 	for key, value := range s.FieldsUsageBody {
 		tmp[fmt.Sprintf("%s", key)] = value
 	}
+	delete(tmp, "FieldsUsageBody")
 
 	data, err = json.Marshal(tmp)
 	if err != nil {

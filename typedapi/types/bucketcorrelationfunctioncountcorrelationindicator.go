@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // BucketCorrelationFunctionCountCorrelationIndicator type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/pipeline.ts#L134-L152
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/pipeline.ts#L149-L167
 type BucketCorrelationFunctionCountCorrelationIndicator struct {
 	// DocCount The total number of documents that initially created the expectations. It’s
 	// required to be greater
@@ -36,13 +42,59 @@ type BucketCorrelationFunctionCountCorrelationIndicator struct {
 	// values.
 	// The length of this value must always equal the number of buckets returned by
 	// the `bucket_path`.
-	Expectations []float64 `json:"expectations"`
+	Expectations []Float64 `json:"expectations"`
 	// Fractions An array of fractions to use when averaging and calculating variance. This
 	// should be used if
 	// the pre-calculated data and the buckets_path have known gaps. The length of
 	// fractions, if provided,
 	// must equal expectations.
-	Fractions []float64 `json:"fractions,omitempty"`
+	Fractions []Float64 `json:"fractions,omitempty"`
+}
+
+func (s *BucketCorrelationFunctionCountCorrelationIndicator) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "doc_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.DocCount = value
+			case float64:
+				f := int(v)
+				s.DocCount = f
+			}
+
+		case "expectations":
+			if err := dec.Decode(&s.Expectations); err != nil {
+				return err
+			}
+
+		case "fractions":
+			if err := dec.Decode(&s.Fractions); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewBucketCorrelationFunctionCountCorrelationIndicator returns a BucketCorrelationFunctionCountCorrelationIndicator.

@@ -15,20 +15,65 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // DataframeAnalyticsStatsOutlierDetection type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/DataframeAnalytics.ts#L389-L393
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/DataframeAnalytics.ts#L404-L417
 type DataframeAnalyticsStatsOutlierDetection struct {
-	Parameters  OutlierDetectionParameters `json:"parameters"`
-	Timestamp   int64                      `json:"timestamp"`
-	TimingStats TimingStats                `json:"timing_stats"`
+	// Parameters The list of job parameters specified by the user or determined by algorithmic
+	// heuristics.
+	Parameters OutlierDetectionParameters `json:"parameters"`
+	// Timestamp The timestamp when the statistics were reported in milliseconds since the
+	// epoch.
+	Timestamp int64 `json:"timestamp"`
+	// TimingStats An object containing time statistics about the data frame analytics job.
+	TimingStats TimingStats `json:"timing_stats"`
+}
+
+func (s *DataframeAnalyticsStatsOutlierDetection) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "parameters":
+			if err := dec.Decode(&s.Parameters); err != nil {
+				return err
+			}
+
+		case "timestamp":
+			if err := dec.Decode(&s.Timestamp); err != nil {
+				return err
+			}
+
+		case "timing_stats":
+			if err := dec.Decode(&s.TimingStats); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewDataframeAnalyticsStatsOutlierDetection returns a DataframeAnalyticsStatsOutlierDetection.

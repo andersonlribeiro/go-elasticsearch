@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Package fieldtype
 package fieldtype
 
 import "strings"
 
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/mapping/Property.ts#L158-L201
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/mapping/Property.ts#L160-L204
 type FieldType struct {
 	Name string
 }
@@ -113,6 +111,8 @@ var (
 
 	Densevector = FieldType{"dense_vector"}
 
+	Sparsevector = FieldType{"sparse_vector"}
+
 	Matchonlytext = FieldType{"match_only_text"}
 )
 
@@ -121,7 +121,7 @@ func (f FieldType) MarshalText() (text []byte, err error) {
 }
 
 func (f *FieldType) UnmarshalText(text []byte) error {
-	switch strings.ToLower(string(text)) {
+	switch strings.ReplaceAll(strings.ToLower(string(text)), "\"", "") {
 
 	case "none":
 		*f = None
@@ -205,6 +205,8 @@ func (f *FieldType) UnmarshalText(text []byte) error {
 		*f = Aggregatemetricdouble
 	case "dense_vector":
 		*f = Densevector
+	case "sparse_vector":
+		*f = Sparsevector
 	case "match_only_text":
 		*f = Matchonlytext
 	default:

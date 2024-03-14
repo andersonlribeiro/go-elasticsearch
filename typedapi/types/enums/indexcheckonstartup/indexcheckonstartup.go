@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Package indexcheckonstartup
 package indexcheckonstartup
 
 import "strings"
 
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/IndexSettings.ts#L253-L260
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/IndexSettings.ts#L256-L263
 type IndexCheckOnStartup struct {
 	Name string
 }
@@ -38,12 +36,16 @@ var (
 	Checksum = IndexCheckOnStartup{"checksum"}
 )
 
+func (i *IndexCheckOnStartup) UnmarshalJSON(data []byte) error {
+	return i.UnmarshalText(data)
+}
+
 func (i IndexCheckOnStartup) MarshalText() (text []byte, err error) {
 	return []byte(i.String()), nil
 }
 
 func (i *IndexCheckOnStartup) UnmarshalText(text []byte) error {
-	switch strings.ToLower(string(text)) {
+	switch strings.ReplaceAll(strings.ToLower(string(text)), "\"", "") {
 
 	case "true":
 		*i = True

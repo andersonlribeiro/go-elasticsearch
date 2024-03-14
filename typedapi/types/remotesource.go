@@ -15,23 +15,88 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // RemoteSource type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/reindex/types.ts#L59-L66
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/reindex/types.ts#L99-L125
 type RemoteSource struct {
-	ConnectTimeout *Duration         `json:"connect_timeout,omitempty"`
-	Headers        map[string]string `json:"headers,omitempty"`
-	Host           string            `json:"host"`
-	Password       *string           `json:"password,omitempty"`
-	SocketTimeout  *Duration         `json:"socket_timeout,omitempty"`
-	Username       *string           `json:"username,omitempty"`
+	// ConnectTimeout The remote connection timeout.
+	// Defaults to 30 seconds.
+	ConnectTimeout Duration `json:"connect_timeout,omitempty"`
+	// Headers An object containing the headers of the request.
+	Headers map[string]string `json:"headers,omitempty"`
+	// Host The URL for the remote instance of Elasticsearch that you want to index from.
+	Host string `json:"host"`
+	// Password The password to use for authentication with the remote host.
+	Password *string `json:"password,omitempty"`
+	// SocketTimeout The remote socket read timeout. Defaults to 30 seconds.
+	SocketTimeout Duration `json:"socket_timeout,omitempty"`
+	// Username The username to use for authentication with the remote host.
+	Username *string `json:"username,omitempty"`
+}
+
+func (s *RemoteSource) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "connect_timeout":
+			if err := dec.Decode(&s.ConnectTimeout); err != nil {
+				return err
+			}
+
+		case "headers":
+			if s.Headers == nil {
+				s.Headers = make(map[string]string, 0)
+			}
+			if err := dec.Decode(&s.Headers); err != nil {
+				return err
+			}
+
+		case "host":
+			if err := dec.Decode(&s.Host); err != nil {
+				return err
+			}
+
+		case "password":
+			if err := dec.Decode(&s.Password); err != nil {
+				return err
+			}
+
+		case "socket_timeout":
+			if err := dec.Decode(&s.SocketTimeout); err != nil {
+				return err
+			}
+
+		case "username":
+			if err := dec.Decode(&s.Username); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewRemoteSource returns a RemoteSource.

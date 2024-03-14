@@ -15,20 +15,72 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // ReadException type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ccr/_types/FollowIndexStats.ts#L71-L75
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ccr/_types/FollowIndexStats.ts#L71-L75
 type ReadException struct {
 	Exception ErrorCause `json:"exception"`
 	FromSeqNo int64      `json:"from_seq_no"`
 	Retries   int        `json:"retries"`
+}
+
+func (s *ReadException) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "exception":
+			if err := dec.Decode(&s.Exception); err != nil {
+				return err
+			}
+
+		case "from_seq_no":
+			if err := dec.Decode(&s.FromSeqNo); err != nil {
+				return err
+			}
+
+		case "retries":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Retries = value
+			case float64:
+				f := int(v)
+				s.Retries = f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewReadException returns a ReadException.

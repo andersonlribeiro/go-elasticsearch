@@ -15,19 +15,54 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // RankEvalHitItem type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/rank_eval/types.ts#L136-L139
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/rank_eval/types.ts#L136-L139
 type RankEvalHitItem struct {
 	Hit    RankEvalHit `json:"hit"`
-	Rating float64     `json:"rating,omitempty"`
+	Rating Float64     `json:"rating,omitempty"`
+}
+
+func (s *RankEvalHitItem) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "hit":
+			if err := dec.Decode(&s.Hit); err != nil {
+				return err
+			}
+
+		case "rating":
+			if err := dec.Decode(&s.Rating); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewRankEvalHitItem returns a RankEvalHitItem.

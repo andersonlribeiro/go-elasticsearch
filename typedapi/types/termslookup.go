@@ -15,21 +15,66 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // TermsLookup type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/query_dsl/term.ts#L132-L137
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/query_dsl/term.ts#L242-L247
 type TermsLookup struct {
 	Id      string  `json:"id"`
 	Index   string  `json:"index"`
 	Path    string  `json:"path"`
 	Routing *string `json:"routing,omitempty"`
+}
+
+func (s *TermsLookup) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "id":
+			if err := dec.Decode(&s.Id); err != nil {
+				return err
+			}
+
+		case "index":
+			if err := dec.Decode(&s.Index); err != nil {
+				return err
+			}
+
+		case "path":
+			if err := dec.Decode(&s.Path); err != nil {
+				return err
+			}
+
+		case "routing":
+			if err := dec.Decode(&s.Routing); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewTermsLookup returns a TermsLookup.

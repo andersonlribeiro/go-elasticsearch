@@ -15,21 +15,74 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // UsageStatsShards type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/field_usage_stats/IndicesFieldUsageStatsResponse.ts#L42-L47
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/field_usage_stats/IndicesFieldUsageStatsResponse.ts#L42-L47
 type UsageStatsShards struct {
 	Routing                 ShardRouting       `json:"routing"`
 	Stats                   IndicesShardsStats `json:"stats"`
 	TrackingId              string             `json:"tracking_id"`
 	TrackingStartedAtMillis int64              `json:"tracking_started_at_millis"`
+}
+
+func (s *UsageStatsShards) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "routing":
+			if err := dec.Decode(&s.Routing); err != nil {
+				return err
+			}
+
+		case "stats":
+			if err := dec.Decode(&s.Stats); err != nil {
+				return err
+			}
+
+		case "tracking_id":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.TrackingId = o
+
+		case "tracking_started_at_millis":
+			if err := dec.Decode(&s.TrackingStartedAtMillis); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewUsageStatsShards returns a UsageStatsShards.

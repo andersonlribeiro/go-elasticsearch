@@ -15,20 +15,78 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // CumulativeCardinalityAggregate type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/Aggregate.ts#L738-L746
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/Aggregate.ts#L747-L755
 type CumulativeCardinalityAggregate struct {
-	Meta          map[string]interface{} `json:"meta,omitempty"`
-	Value         int64                  `json:"value"`
-	ValueAsString *string                `json:"value_as_string,omitempty"`
+	Meta          Metadata `json:"meta,omitempty"`
+	Value         int64    `json:"value"`
+	ValueAsString *string  `json:"value_as_string,omitempty"`
+}
+
+func (s *CumulativeCardinalityAggregate) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "meta":
+			if err := dec.Decode(&s.Meta); err != nil {
+				return err
+			}
+
+		case "value":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.Value = value
+			case float64:
+				f := int64(v)
+				s.Value = f
+			}
+
+		case "value_as_string":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.ValueAsString = &o
+
+		}
+	}
+	return nil
 }
 
 // NewCumulativeCardinalityAggregate returns a CumulativeCardinalityAggregate.

@@ -15,22 +15,113 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // DistanceFeatureQueryBaseGeoLocationDistance type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/query_dsl/specialized.ts#L40-L44
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/query_dsl/specialized.ts#L40-L60
 type DistanceFeatureQueryBaseGeoLocationDistance struct {
-	Boost      *float32    `json:"boost,omitempty"`
-	Field      string      `json:"field"`
-	Origin     GeoLocation `json:"origin"`
-	Pivot      string      `json:"pivot"`
-	QueryName_ *string     `json:"_name,omitempty"`
+	// Boost Floating point number used to decrease or increase the relevance scores of
+	// the query.
+	// Boost values are relative to the default value of 1.0.
+	// A boost value between 0 and 1.0 decreases the relevance score.
+	// A value greater than 1.0 increases the relevance score.
+	Boost *float32 `json:"boost,omitempty"`
+	// Field Name of the field used to calculate distances. This field must meet the
+	// following criteria:
+	// be a `date`, `date_nanos` or `geo_point` field;
+	// have an `index` mapping parameter value of `true`, which is the default;
+	// have an `doc_values` mapping parameter value of `true`, which is the default.
+	Field string `json:"field"`
+	// Origin Date or point of origin used to calculate distances.
+	// If the `field` value is a `date` or `date_nanos` field, the `origin` value
+	// must be a date.
+	// Date Math, such as `now-1h`, is supported.
+	// If the field value is a `geo_point` field, the `origin` value must be a
+	// geopoint.
+	Origin GeoLocation `json:"origin"`
+	// Pivot Distance from the `origin` at which relevance scores receive half of the
+	// `boost` value.
+	// If the `field` value is a `date` or `date_nanos` field, the `pivot` value
+	// must be a time unit, such as `1h` or `10d`. If the `field` value is a
+	// `geo_point` field, the `pivot` value must be a distance unit, such as `1km`
+	// or `12m`.
+	Pivot      string  `json:"pivot"`
+	QueryName_ *string `json:"_name,omitempty"`
+}
+
+func (s *DistanceFeatureQueryBaseGeoLocationDistance) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "boost":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 32)
+				if err != nil {
+					return err
+				}
+				f := float32(value)
+				s.Boost = &f
+			case float64:
+				f := float32(v)
+				s.Boost = &f
+			}
+
+		case "field":
+			if err := dec.Decode(&s.Field); err != nil {
+				return err
+			}
+
+		case "origin":
+			if err := dec.Decode(&s.Origin); err != nil {
+				return err
+			}
+
+		case "pivot":
+			if err := dec.Decode(&s.Pivot); err != nil {
+				return err
+			}
+
+		case "_name":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.QueryName_ = &o
+
+		}
+	}
+	return nil
 }
 
 // NewDistanceFeatureQueryBaseGeoLocationDistance returns a DistanceFeatureQueryBaseGeoLocationDistance.

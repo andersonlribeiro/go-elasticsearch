@@ -15,22 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // DataframeAnalysisOutlierDetection type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/DataframeAnalytics.ts#L103-L132
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/DataframeAnalytics.ts#L103-L132
 type DataframeAnalysisOutlierDetection struct {
 	// ComputeFeatureInfluence Specifies whether the feature influence calculation is enabled.
 	ComputeFeatureInfluence *bool `json:"compute_feature_influence,omitempty"`
 	// FeatureInfluenceThreshold The minimum outlier score that a document needs to have in order to calculate
 	// its feature influence score. Value range: 0-1.
-	FeatureInfluenceThreshold *float64 `json:"feature_influence_threshold,omitempty"`
+	FeatureInfluenceThreshold *Float64 `json:"feature_influence_threshold,omitempty"`
 	// Method The method that outlier detection uses. Available methods are `lof`, `ldof`,
 	// `distance_kth_nn`, `distance_knn`, and `ensemble`. The default value is
 	// ensemble, which means that outlier detection uses an ensemble of different
@@ -46,10 +52,118 @@ type DataframeAnalysisOutlierDetection struct {
 	// OutlierFraction The proportion of the data set that is assumed to be outlying prior to
 	// outlier detection. For example, 0.05 means it is assumed that 5% of values
 	// are real outliers and 95% are inliers.
-	OutlierFraction *float64 `json:"outlier_fraction,omitempty"`
+	OutlierFraction *Float64 `json:"outlier_fraction,omitempty"`
 	// StandardizationEnabled If true, the following operation is performed on the columns before computing
 	// outlier scores: `(x_i - mean(x_i)) / sd(x_i)`.
 	StandardizationEnabled *bool `json:"standardization_enabled,omitempty"`
+}
+
+func (s *DataframeAnalysisOutlierDetection) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "compute_feature_influence":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.ComputeFeatureInfluence = &value
+			case bool:
+				s.ComputeFeatureInfluence = &v
+			}
+
+		case "feature_influence_threshold":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.FeatureInfluenceThreshold = &f
+			case float64:
+				f := Float64(v)
+				s.FeatureInfluenceThreshold = &f
+			}
+
+		case "method":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Method = &o
+
+		case "n_neighbors":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.NNeighbors = &value
+			case float64:
+				f := int(v)
+				s.NNeighbors = &f
+			}
+
+		case "outlier_fraction":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.OutlierFraction = &f
+			case float64:
+				f := Float64(v)
+				s.OutlierFraction = &f
+			}
+
+		case "standardization_enabled":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.StandardizationEnabled = &value
+			case bool:
+				s.StandardizationEnabled = &v
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewDataframeAnalysisOutlierDetection returns a DataframeAnalysisOutlierDetection.

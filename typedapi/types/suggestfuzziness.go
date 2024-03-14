@@ -15,22 +15,120 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // SuggestFuzziness type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/search/_types/suggester.ts#L138-L144
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/search/_types/suggester.ts#L193-L221
 type SuggestFuzziness struct {
-	Fuzziness      *Fuzziness `json:"fuzziness,omitempty"`
-	MinLength      *int       `json:"min_length,omitempty"`
-	PrefixLength   *int       `json:"prefix_length,omitempty"`
-	Transpositions *bool      `json:"transpositions,omitempty"`
-	UnicodeAware   *bool      `json:"unicode_aware,omitempty"`
+	// Fuzziness The fuzziness factor.
+	Fuzziness Fuzziness `json:"fuzziness,omitempty"`
+	// MinLength Minimum length of the input before fuzzy suggestions are returned.
+	MinLength *int `json:"min_length,omitempty"`
+	// PrefixLength Minimum length of the input, which is not checked for fuzzy alternatives.
+	PrefixLength *int `json:"prefix_length,omitempty"`
+	// Transpositions If set to `true`, transpositions are counted as one change instead of two.
+	Transpositions *bool `json:"transpositions,omitempty"`
+	// UnicodeAware If `true`, all measurements (like fuzzy edit distance, transpositions, and
+	// lengths) are measured in Unicode code points instead of in bytes.
+	// This is slightly slower than raw bytes.
+	UnicodeAware *bool `json:"unicode_aware,omitempty"`
+}
+
+func (s *SuggestFuzziness) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "fuzziness":
+			if err := dec.Decode(&s.Fuzziness); err != nil {
+				return err
+			}
+
+		case "min_length":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.MinLength = &value
+			case float64:
+				f := int(v)
+				s.MinLength = &f
+			}
+
+		case "prefix_length":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.PrefixLength = &value
+			case float64:
+				f := int(v)
+				s.PrefixLength = &f
+			}
+
+		case "transpositions":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Transpositions = &value
+			case bool:
+				s.Transpositions = &v
+			}
+
+		case "unicode_aware":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.UnicodeAware = &value
+			case bool:
+				s.UnicodeAware = &v
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewSuggestFuzziness returns a SuggestFuzziness.

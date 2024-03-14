@@ -15,26 +15,190 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // TrainedModelTreeNode type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/put_trained_model/types.ts#L81-L91
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/put_trained_model/types.ts#L81-L91
 type TrainedModelTreeNode struct {
 	DecisionType *string  `json:"decision_type,omitempty"`
 	DefaultLeft  *bool    `json:"default_left,omitempty"`
-	LeafValue    *float64 `json:"leaf_value,omitempty"`
+	LeafValue    *Float64 `json:"leaf_value,omitempty"`
 	LeftChild    *int     `json:"left_child,omitempty"`
 	NodeIndex    int      `json:"node_index"`
 	RightChild   *int     `json:"right_child,omitempty"`
 	SplitFeature *int     `json:"split_feature,omitempty"`
 	SplitGain    *int     `json:"split_gain,omitempty"`
-	Threshold    *float64 `json:"threshold,omitempty"`
+	Threshold    *Float64 `json:"threshold,omitempty"`
+}
+
+func (s *TrainedModelTreeNode) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "decision_type":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.DecisionType = &o
+
+		case "default_left":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.DefaultLeft = &value
+			case bool:
+				s.DefaultLeft = &v
+			}
+
+		case "leaf_value":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.LeafValue = &f
+			case float64:
+				f := Float64(v)
+				s.LeafValue = &f
+			}
+
+		case "left_child":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.LeftChild = &value
+			case float64:
+				f := int(v)
+				s.LeftChild = &f
+			}
+
+		case "node_index":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.NodeIndex = value
+			case float64:
+				f := int(v)
+				s.NodeIndex = f
+			}
+
+		case "right_child":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.RightChild = &value
+			case float64:
+				f := int(v)
+				s.RightChild = &f
+			}
+
+		case "split_feature":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.SplitFeature = &value
+			case float64:
+				f := int(v)
+				s.SplitFeature = &f
+			}
+
+		case "split_gain":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.SplitGain = &value
+			case float64:
+				f := int(v)
+				s.SplitGain = &f
+			}
+
+		case "threshold":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return err
+				}
+				f := Float64(value)
+				s.Threshold = &f
+			case float64:
+				f := Float64(v)
+				s.Threshold = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewTrainedModelTreeNode returns a TrainedModelTreeNode.

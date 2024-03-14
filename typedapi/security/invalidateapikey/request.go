@@ -15,28 +15,45 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package invalidateapikey
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
 )
 
 // Request holds the request body struct for the package invalidateapikey
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/security/invalidate_api_key/SecurityInvalidateApiKeyRequest.ts#L23-L37
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/security/invalidate_api_key/SecurityInvalidateApiKeyRequest.ts#L23-L66
 type Request struct {
-	Id        *string  `json:"id,omitempty"`
-	Ids       []string `json:"ids,omitempty"`
-	Name      *string  `json:"name,omitempty"`
-	Owner     *bool    `json:"owner,omitempty"`
-	RealmName *string  `json:"realm_name,omitempty"`
-	Username  *string  `json:"username,omitempty"`
+	Id *string `json:"id,omitempty"`
+	// Ids A list of API key ids.
+	// This parameter cannot be used with any of `name`, `realm_name`, or
+	// `username`.
+	Ids []string `json:"ids,omitempty"`
+	// Name An API key name.
+	// This parameter cannot be used with any of `ids`, `realm_name` or `username`.
+	Name *string `json:"name,omitempty"`
+	// Owner Can be used to query API keys owned by the currently authenticated user.
+	// The `realm_name` or `username` parameters cannot be specified when this
+	// parameter is set to `true` as they are assumed to be the currently
+	// authenticated ones.
+	Owner *bool `json:"owner,omitempty"`
+	// RealmName The name of an authentication realm.
+	// This parameter cannot be used with either `ids` or `name`, or when `owner`
+	// flag is set to `true`.
+	RealmName *string `json:"realm_name,omitempty"`
+	// Username The username of a user.
+	// This parameter cannot be used with either `ids` or `name`, or when `owner`
+	// flag is set to `true`.
+	Username *string `json:"username,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -46,7 +63,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -55,4 +72,69 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "id":
+			if err := dec.Decode(&s.Id); err != nil {
+				return err
+			}
+
+		case "ids":
+			if err := dec.Decode(&s.Ids); err != nil {
+				return err
+			}
+
+		case "name":
+			if err := dec.Decode(&s.Name); err != nil {
+				return err
+			}
+
+		case "owner":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.Owner = &value
+			case bool:
+				s.Owner = &v
+			}
+
+		case "realm_name":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.RealmName = &o
+
+		case "username":
+			if err := dec.Decode(&s.Username); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }

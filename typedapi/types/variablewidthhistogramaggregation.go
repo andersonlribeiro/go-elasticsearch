@@ -15,21 +15,108 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // VariableWidthHistogramAggregation type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/aggregations/bucket.ts#L429-L434
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/aggregations/bucket.ts#L1015-L1035
 type VariableWidthHistogramAggregation struct {
-	Buckets       *int    `json:"buckets,omitempty"`
-	Field         *string `json:"field,omitempty"`
-	InitialBuffer *int    `json:"initial_buffer,omitempty"`
-	ShardSize     *int    `json:"shard_size,omitempty"`
+	// Buckets The target number of buckets.
+	Buckets *int `json:"buckets,omitempty"`
+	// Field The name of the field.
+	Field *string `json:"field,omitempty"`
+	// InitialBuffer Specifies the number of individual documents that will be stored in memory on
+	// a shard before the initial bucketing algorithm is run.
+	// Defaults to `min(10 * shard_size, 50000)`.
+	InitialBuffer *int `json:"initial_buffer,omitempty"`
+	// ShardSize The number of buckets that the coordinating node will request from each
+	// shard.
+	// Defaults to `buckets * 50`.
+	ShardSize *int `json:"shard_size,omitempty"`
+}
+
+func (s *VariableWidthHistogramAggregation) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "buckets":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Buckets = &value
+			case float64:
+				f := int(v)
+				s.Buckets = &f
+			}
+
+		case "field":
+			if err := dec.Decode(&s.Field); err != nil {
+				return err
+			}
+
+		case "initial_buffer":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.InitialBuffer = &value
+			case float64:
+				f := int(v)
+				s.InitialBuffer = &f
+			}
+
+		case "shard_size":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.ShardSize = &value
+			case float64:
+				f := int(v)
+				s.ShardSize = &f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewVariableWidthHistogramAggregation returns a VariableWidthHistogramAggregation.

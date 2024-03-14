@@ -15,19 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 // NodesIngest type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/_types/Stats.ts#L138-L141
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/_types/Stats.ts#L345-L354
 type NodesIngest struct {
+	// Pipelines Contains statistics about ingest pipelines for the node.
 	Pipelines map[string]IngestTotal `json:"pipelines,omitempty"`
-	Total     *IngestTotal           `json:"total,omitempty"`
+	// Total Contains statistics about ingest operations for the node.
+	Total *IngestTotal `json:"total,omitempty"`
 }
 
 // NewNodesIngest returns a NodesIngest.

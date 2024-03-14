@@ -15,23 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package fieldcaps
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // Request holds the request body struct for the package fieldcaps
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/field_caps/FieldCapabilitiesRequest.ts#L25-L95
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/field_caps/FieldCapabilitiesRequest.ts#L25-L106
 type Request struct {
 
 	// Fields List of fields to retrieve capabilities for. Wildcard (`*`) expressions are
@@ -44,7 +45,7 @@ type Request struct {
 	// search requests.
 	// These fields exist only as part of the query and take precedence over fields
 	// defined with the same name in the index mappings.
-	RuntimeMappings map[string]types.RuntimeField `json:"runtime_mappings,omitempty"`
+	RuntimeMappings types.RuntimeFields `json:"runtime_mappings,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -54,7 +55,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -63,4 +64,49 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "fields":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := new(string)
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.Fields = append(s.Fields, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.Fields); err != nil {
+					return err
+				}
+			}
+
+		case "index_filter":
+			if err := dec.Decode(&s.IndexFilter); err != nil {
+				return err
+			}
+
+		case "runtime_mappings":
+			if err := dec.Decode(&s.RuntimeMappings); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }

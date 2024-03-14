@@ -15,16 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Returns information about whether a particular component template exist
 package existscomponenttemplate
 
 import (
-	gobytes "bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -52,11 +49,15 @@ type ExistsComponentTemplate struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
 
 	name string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewExistsComponentTemplate type alias for index.
@@ -68,7 +69,7 @@ func NewExistsComponentTemplateFunc(tp elastictransport.Interface) NewExistsComp
 	return func(name string) *ExistsComponentTemplate {
 		n := New(tp)
 
-		n.Name(name)
+		n._name(name)
 
 		return n
 	}
@@ -76,13 +77,18 @@ func NewExistsComponentTemplateFunc(tp elastictransport.Interface) NewExistsComp
 
 // Returns information about whether a particular component template exist
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/{branch}/indices-component-template.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-component-template.html
 func New(tp elastictransport.Interface) *ExistsComponentTemplate {
 	r := &ExistsComponentTemplate{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -105,6 +111,9 @@ func (r *ExistsComponentTemplate) HttpRequest(ctx context.Context) (*http.Reques
 		path.WriteString("_component_template")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "name", r.name)
+		}
 		path.WriteString(r.name)
 
 		method = http.MethodHead
@@ -118,9 +127,9 @@ func (r *ExistsComponentTemplate) HttpRequest(ctx context.Context) (*http.Reques
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -136,25 +145,67 @@ func (r *ExistsComponentTemplate) HttpRequest(ctx context.Context) (*http.Reques
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r ExistsComponentTemplate) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r ExistsComponentTemplate) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "cluster.exists_component_template")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "cluster.exists_component_template")
+		if reader := instrument.RecordRequestBody(ctx, "cluster.exists_component_template", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "cluster.exists_component_template")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the ExistsComponentTemplate query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the ExistsComponentTemplate query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a existscomponenttemplate.Response
+func (r ExistsComponentTemplate) Do(ctx context.Context) (bool, error) {
+	return r.IsSuccess(ctx)
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r ExistsComponentTemplate) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r ExistsComponentTemplate) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "cluster.exists_component_template")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -167,6 +218,14 @@ func (r ExistsComponentTemplate) IsSuccess(ctx context.Context) (bool, error) {
 
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		return true, nil
+	}
+
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the ExistsComponentTemplate query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
 	}
 
 	return false, nil
@@ -182,9 +241,9 @@ func (r *ExistsComponentTemplate) Header(key, value string) *ExistsComponentTemp
 // Name Comma-separated list of component template names used to limit the request.
 // Wildcard (*) expressions are supported.
 // API Name: name
-func (r *ExistsComponentTemplate) Name(v string) *ExistsComponentTemplate {
+func (r *ExistsComponentTemplate) _name(name string) *ExistsComponentTemplate {
 	r.paramSet |= nameMask
-	r.name = v
+	r.name = name
 
 	return r
 }
@@ -193,8 +252,8 @@ func (r *ExistsComponentTemplate) Name(v string) *ExistsComponentTemplate {
 // received before the timeout expires, the request fails and returns an
 // error.
 // API name: master_timeout
-func (r *ExistsComponentTemplate) MasterTimeout(value string) *ExistsComponentTemplate {
-	r.values.Set("master_timeout", value)
+func (r *ExistsComponentTemplate) MasterTimeout(duration string) *ExistsComponentTemplate {
+	r.values.Set("master_timeout", duration)
 
 	return r
 }
@@ -202,8 +261,8 @@ func (r *ExistsComponentTemplate) MasterTimeout(value string) *ExistsComponentTe
 // Local If true, the request retrieves information from the local node only.
 // Defaults to false, which means information is retrieved from the master node.
 // API name: local
-func (r *ExistsComponentTemplate) Local(b bool) *ExistsComponentTemplate {
-	r.values.Set("local", strconv.FormatBool(b))
+func (r *ExistsComponentTemplate) Local(local bool) *ExistsComponentTemplate {
+	r.values.Set("local", strconv.FormatBool(local))
 
 	return r
 }

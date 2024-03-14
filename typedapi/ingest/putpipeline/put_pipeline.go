@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Creates or updates a pipeline.
 package putpipeline
@@ -29,11 +27,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 const (
@@ -50,14 +50,19 @@ type PutPipeline struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
-	req *Request
-	raw json.RawMessage
+	req      *Request
+	deferred []func(request *Request) error
+	buf      *gobytes.Buffer
 
 	paramSet int
 
 	id string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewPutPipeline type alias for index.
@@ -69,7 +74,7 @@ func NewPutPipelineFunc(tp elastictransport.Interface) NewPutPipeline {
 	return func(id string) *PutPipeline {
 		n := New(tp)
 
-		n.Id(id)
+		n._id(id)
 
 		return n
 	}
@@ -77,13 +82,22 @@ func NewPutPipelineFunc(tp elastictransport.Interface) NewPutPipeline {
 
 // Creates or updates a pipeline.
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/master/put-pipeline-api.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/ingest.html
 func New(tp elastictransport.Interface) *PutPipeline {
 	r := &PutPipeline{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+
+		buf: gobytes.NewBuffer(nil),
+
+		req: NewRequest(),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -91,7 +105,7 @@ func New(tp elastictransport.Interface) *PutPipeline {
 
 // Raw takes a json payload as input which is then passed to the http.Request
 // If specified Raw takes precedence on Request method.
-func (r *PutPipeline) Raw(raw json.RawMessage) *PutPipeline {
+func (r *PutPipeline) Raw(raw io.Reader) *PutPipeline {
 	r.raw = raw
 
 	return r
@@ -113,9 +127,17 @@ func (r *PutPipeline) HttpRequest(ctx context.Context) (*http.Request, error) {
 
 	var err error
 
-	if r.raw != nil {
-		r.buf.Write(r.raw)
-	} else if r.req != nil {
+	if len(r.deferred) > 0 {
+		for _, f := range r.deferred {
+			deferredErr := f(r.req)
+			if deferredErr != nil {
+				return nil, deferredErr
+			}
+		}
+	}
+
+	if r.raw == nil && r.req != nil {
+
 		data, err := json.Marshal(r.req)
 
 		if err != nil {
@@ -123,6 +145,11 @@ func (r *PutPipeline) HttpRequest(ctx context.Context) (*http.Request, error) {
 		}
 
 		r.buf.Write(data)
+
+	}
+
+	if r.buf.Len() > 0 {
+		r.raw = r.buf
 	}
 
 	r.path.Scheme = "http"
@@ -135,6 +162,9 @@ func (r *PutPipeline) HttpRequest(ctx context.Context) (*http.Request, error) {
 		path.WriteString("pipeline")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "id", r.id)
+		}
 		path.WriteString(r.id)
 
 		method = http.MethodPut
@@ -148,15 +178,15 @@ func (r *PutPipeline) HttpRequest(ctx context.Context) (*http.Request, error) {
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
 
 	if req.Header.Get("Content-Type") == "" {
-		if r.buf.Len() > 0 {
+		if r.raw != nil {
 			req.Header.Set("Content-Type", "application/vnd.elasticsearch+json;compatible-with=8")
 		}
 	}
@@ -172,19 +202,100 @@ func (r *PutPipeline) HttpRequest(ctx context.Context) (*http.Request, error) {
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r PutPipeline) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r PutPipeline) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "ingest.put_pipeline")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "ingest.put_pipeline")
+		if reader := instrument.RecordRequestBody(ctx, "ingest.put_pipeline", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "ingest.put_pipeline")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the PutPipeline query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the PutPipeline query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
+}
+
+// Do runs the request through the transport, handle the response and returns a putpipeline.Response
+func (r PutPipeline) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "ingest.put_pipeline")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
 }
 
 // Header set a key, value pair in the PutPipeline headers map.
@@ -196,9 +307,9 @@ func (r *PutPipeline) Header(key, value string) *PutPipeline {
 
 // Id ID of the ingest pipeline to create or update.
 // API Name: id
-func (r *PutPipeline) Id(v string) *PutPipeline {
+func (r *PutPipeline) _id(id string) *PutPipeline {
 	r.paramSet |= idMask
-	r.id = v
+	r.id = id
 
 	return r
 }
@@ -206,8 +317,8 @@ func (r *PutPipeline) Id(v string) *PutPipeline {
 // MasterTimeout Period to wait for a connection to the master node. If no response is
 // received before the timeout expires, the request fails and returns an error.
 // API name: master_timeout
-func (r *PutPipeline) MasterTimeout(value string) *PutPipeline {
-	r.values.Set("master_timeout", value)
+func (r *PutPipeline) MasterTimeout(duration string) *PutPipeline {
+	r.values.Set("master_timeout", duration)
 
 	return r
 }
@@ -215,16 +326,66 @@ func (r *PutPipeline) MasterTimeout(value string) *PutPipeline {
 // Timeout Period to wait for a response. If no response is received before the timeout
 // expires, the request fails and returns an error.
 // API name: timeout
-func (r *PutPipeline) Timeout(value string) *PutPipeline {
-	r.values.Set("timeout", value)
+func (r *PutPipeline) Timeout(duration string) *PutPipeline {
+	r.values.Set("timeout", duration)
 
 	return r
 }
 
 // IfVersion Required version for optimistic concurrency control for pipeline updates
 // API name: if_version
-func (r *PutPipeline) IfVersion(value string) *PutPipeline {
-	r.values.Set("if_version", value)
+func (r *PutPipeline) IfVersion(versionnumber string) *PutPipeline {
+	r.values.Set("if_version", versionnumber)
+
+	return r
+}
+
+// Description Description of the ingest pipeline.
+// API name: description
+func (r *PutPipeline) Description(description string) *PutPipeline {
+
+	r.req.Description = &description
+
+	return r
+}
+
+// Meta_ Optional metadata about the ingest pipeline. May have any contents. This map
+// is not automatically generated by Elasticsearch.
+// API name: _meta
+func (r *PutPipeline) Meta_(metadata types.Metadata) *PutPipeline {
+	r.req.Meta_ = metadata
+
+	return r
+}
+
+// OnFailure Processors to run immediately after a processor failure. Each processor
+// supports a processor-level `on_failure` value. If a processor without an
+// `on_failure` value fails, Elasticsearch uses this pipeline-level parameter as
+// a fallback. The processors in this parameter run sequentially in the order
+// specified. Elasticsearch will not attempt to run the pipeline's remaining
+// processors.
+// API name: on_failure
+func (r *PutPipeline) OnFailure(onfailures ...types.ProcessorContainer) *PutPipeline {
+	r.req.OnFailure = onfailures
+
+	return r
+}
+
+// Processors Processors used to perform transformations on documents before indexing.
+// Processors run sequentially in the order specified.
+// API name: processors
+func (r *PutPipeline) Processors(processors ...types.ProcessorContainer) *PutPipeline {
+	r.req.Processors = processors
+
+	return r
+}
+
+// Version Version number used by external systems to track ingest pipelines. This
+// parameter is intended for external systems only. Elasticsearch does not use
+// or validate pipeline version numbers.
+// API name: version
+func (r *PutPipeline) Version(versionnumber int64) *PutPipeline {
+	r.req.Version = &versionnumber
 
 	return r
 }

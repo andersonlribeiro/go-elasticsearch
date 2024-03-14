@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Removes stale data from repository.
 package cleanuprepository
 
 import (
-	gobytes "bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -35,6 +33,7 @@ import (
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 const (
@@ -51,11 +50,15 @@ type CleanupRepository struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
 
 	repository string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewCleanupRepository type alias for index.
@@ -67,7 +70,7 @@ func NewCleanupRepositoryFunc(tp elastictransport.Interface) NewCleanupRepositor
 	return func(repository string) *CleanupRepository {
 		n := New(tp)
 
-		n.Repository(repository)
+		n._repository(repository)
 
 		return n
 	}
@@ -75,13 +78,18 @@ func NewCleanupRepositoryFunc(tp elastictransport.Interface) NewCleanupRepositor
 
 // Removes stale data from repository.
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/master/clean-up-snapshot-repo-api.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/clean-up-snapshot-repo-api.html
 func New(tp elastictransport.Interface) *CleanupRepository {
 	r := &CleanupRepository{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -104,6 +112,9 @@ func (r *CleanupRepository) HttpRequest(ctx context.Context) (*http.Request, err
 		path.WriteString("_snapshot")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "repository", r.repository)
+		}
 		path.WriteString(r.repository)
 		path.WriteString("/")
 		path.WriteString("_cleanup")
@@ -119,9 +130,9 @@ func (r *CleanupRepository) HttpRequest(ctx context.Context) (*http.Request, err
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -137,25 +148,116 @@ func (r *CleanupRepository) HttpRequest(ctx context.Context) (*http.Request, err
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r CleanupRepository) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r CleanupRepository) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "snapshot.cleanup_repository")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "snapshot.cleanup_repository")
+		if reader := instrument.RecordRequestBody(ctx, "snapshot.cleanup_repository", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "snapshot.cleanup_repository")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the CleanupRepository query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the CleanupRepository query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a cleanuprepository.Response
+func (r CleanupRepository) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "snapshot.cleanup_repository")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r CleanupRepository) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r CleanupRepository) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "snapshot.cleanup_repository")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -170,6 +272,14 @@ func (r CleanupRepository) IsSuccess(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the CleanupRepository query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
+	}
+
 	return false, nil
 }
 
@@ -182,25 +292,25 @@ func (r *CleanupRepository) Header(key, value string) *CleanupRepository {
 
 // Repository Snapshot repository to clean up.
 // API Name: repository
-func (r *CleanupRepository) Repository(v string) *CleanupRepository {
+func (r *CleanupRepository) _repository(repository string) *CleanupRepository {
 	r.paramSet |= repositoryMask
-	r.repository = v
+	r.repository = repository
 
 	return r
 }
 
 // MasterTimeout Period to wait for a connection to the master node.
 // API name: master_timeout
-func (r *CleanupRepository) MasterTimeout(value string) *CleanupRepository {
-	r.values.Set("master_timeout", value)
+func (r *CleanupRepository) MasterTimeout(duration string) *CleanupRepository {
+	r.values.Set("master_timeout", duration)
 
 	return r
 }
 
 // Timeout Period to wait for a response.
 // API name: timeout
-func (r *CleanupRepository) Timeout(value string) *CleanupRepository {
-	r.values.Set("timeout", value)
+func (r *CleanupRepository) Timeout(duration string) *CleanupRepository {
+	r.values.Set("timeout", duration)
 
 	return r
 }

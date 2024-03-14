@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Creates an API key on behalf of another user.
 package grantapikey
@@ -29,11 +27,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/apikeygranttype"
 )
 
 // ErrBuildPath is returned in case of missing parameters within the build of the request.
@@ -46,12 +47,17 @@ type GrantApiKey struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
-	req *Request
-	raw json.RawMessage
+	req      *Request
+	deferred []func(request *Request) error
+	buf      *gobytes.Buffer
 
 	paramSet int
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewGrantApiKey type alias for index.
@@ -75,7 +81,16 @@ func New(tp elastictransport.Interface) *GrantApiKey {
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+
+		buf: gobytes.NewBuffer(nil),
+
+		req: NewRequest(),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -83,7 +98,7 @@ func New(tp elastictransport.Interface) *GrantApiKey {
 
 // Raw takes a json payload as input which is then passed to the http.Request
 // If specified Raw takes precedence on Request method.
-func (r *GrantApiKey) Raw(raw json.RawMessage) *GrantApiKey {
+func (r *GrantApiKey) Raw(raw io.Reader) *GrantApiKey {
 	r.raw = raw
 
 	return r
@@ -105,9 +120,17 @@ func (r *GrantApiKey) HttpRequest(ctx context.Context) (*http.Request, error) {
 
 	var err error
 
-	if r.raw != nil {
-		r.buf.Write(r.raw)
-	} else if r.req != nil {
+	if len(r.deferred) > 0 {
+		for _, f := range r.deferred {
+			deferredErr := f(r.req)
+			if deferredErr != nil {
+				return nil, deferredErr
+			}
+		}
+	}
+
+	if r.raw == nil && r.req != nil {
+
 		data, err := json.Marshal(r.req)
 
 		if err != nil {
@@ -115,6 +138,11 @@ func (r *GrantApiKey) HttpRequest(ctx context.Context) (*http.Request, error) {
 		}
 
 		r.buf.Write(data)
+
+	}
+
+	if r.buf.Len() > 0 {
+		r.raw = r.buf
 	}
 
 	r.path.Scheme = "http"
@@ -139,15 +167,15 @@ func (r *GrantApiKey) HttpRequest(ctx context.Context) (*http.Request, error) {
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
 
 	if req.Header.Get("Content-Type") == "" {
-		if r.buf.Len() > 0 {
+		if r.raw != nil {
 			req.Header.Set("Content-Type", "application/vnd.elasticsearch+json;compatible-with=8")
 		}
 	}
@@ -163,24 +191,161 @@ func (r *GrantApiKey) HttpRequest(ctx context.Context) (*http.Request, error) {
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r GrantApiKey) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r GrantApiKey) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "security.grant_api_key")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "security.grant_api_key")
+		if reader := instrument.RecordRequestBody(ctx, "security.grant_api_key", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "security.grant_api_key")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the GrantApiKey query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the GrantApiKey query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a grantapikey.Response
+func (r GrantApiKey) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "security.grant_api_key")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // Header set a key, value pair in the GrantApiKey headers map.
 func (r *GrantApiKey) Header(key, value string) *GrantApiKey {
 	r.headers.Set(key, value)
+
+	return r
+}
+
+// AccessToken The user’s access token.
+// If you specify the `access_token` grant type, this parameter is required.
+// It is not valid with other grant types.
+// API name: access_token
+func (r *GrantApiKey) AccessToken(accesstoken string) *GrantApiKey {
+
+	r.req.AccessToken = &accesstoken
+
+	return r
+}
+
+// ApiKey Defines the API key.
+// API name: api_key
+func (r *GrantApiKey) ApiKey(apikey *types.GrantApiKey) *GrantApiKey {
+
+	r.req.ApiKey = *apikey
+
+	return r
+}
+
+// GrantType The type of grant. Supported grant types are: `access_token`, `password`.
+// API name: grant_type
+func (r *GrantApiKey) GrantType(granttype apikeygranttype.ApiKeyGrantType) *GrantApiKey {
+	r.req.GrantType = granttype
+
+	return r
+}
+
+// Password The user’s password. If you specify the `password` grant type, this parameter
+// is required.
+// It is not valid with other grant types.
+// API name: password
+func (r *GrantApiKey) Password(password string) *GrantApiKey {
+	r.req.Password = &password
+
+	return r
+}
+
+// RunAs The name of the user to be impersonated.
+// API name: run_as
+func (r *GrantApiKey) RunAs(username string) *GrantApiKey {
+	r.req.RunAs = &username
+
+	return r
+}
+
+// Username The user name that identifies the user.
+// If you specify the `password` grant type, this parameter is required.
+// It is not valid with other grant types.
+// API name: username
+func (r *GrantApiKey) Username(username string) *GrantApiKey {
+	r.req.Username = &username
 
 	return r
 }

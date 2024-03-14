@@ -15,19 +15,90 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/managedby"
+)
+
 // DataStreamIndex type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/DataStream.ts#L52-L55
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/DataStream.ts#L121-L142
 type DataStreamIndex struct {
+	// IlmPolicy Name of the current ILM lifecycle policy configured for this backing index.
+	IlmPolicy *string `json:"ilm_policy,omitempty"`
+	// IndexName Name of the backing index.
 	IndexName string `json:"index_name"`
+	// IndexUuid Universally unique identifier (UUID) for the index.
 	IndexUuid string `json:"index_uuid"`
+	// ManagedBy Name of the lifecycle system that's currently managing this backing index.
+	ManagedBy managedby.ManagedBy `json:"managed_by"`
+	// PreferIlm Indicates if ILM should take precedence over DSL in case both are configured
+	// to manage this index.
+	PreferIlm bool `json:"prefer_ilm"`
+}
+
+func (s *DataStreamIndex) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "ilm_policy":
+			if err := dec.Decode(&s.IlmPolicy); err != nil {
+				return err
+			}
+
+		case "index_name":
+			if err := dec.Decode(&s.IndexName); err != nil {
+				return err
+			}
+
+		case "index_uuid":
+			if err := dec.Decode(&s.IndexUuid); err != nil {
+				return err
+			}
+
+		case "managed_by":
+			if err := dec.Decode(&s.ManagedBy); err != nil {
+				return err
+			}
+
+		case "prefer_ilm":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.PreferIlm = value
+			case bool:
+				s.PreferIlm = v
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewDataStreamIndex returns a DataStreamIndex.

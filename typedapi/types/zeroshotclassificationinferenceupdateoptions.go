@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // ZeroShotClassificationInferenceUpdateOptions type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/inference.ts#L333-L342
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/inference.ts#L374-L383
 type ZeroShotClassificationInferenceUpdateOptions struct {
 	// Labels The labels to predict.
 	Labels []string `json:"labels"`
@@ -36,6 +42,62 @@ type ZeroShotClassificationInferenceUpdateOptions struct {
 	ResultsField *string `json:"results_field,omitempty"`
 	// Tokenization The tokenization options to update when inferring
 	Tokenization *NlpTokenizationUpdateOptions `json:"tokenization,omitempty"`
+}
+
+func (s *ZeroShotClassificationInferenceUpdateOptions) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "labels":
+			if err := dec.Decode(&s.Labels); err != nil {
+				return err
+			}
+
+		case "multi_label":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.MultiLabel = &value
+			case bool:
+				s.MultiLabel = &v
+			}
+
+		case "results_field":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.ResultsField = &o
+
+		case "tokenization":
+			if err := dec.Decode(&s.Tokenization); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewZeroShotClassificationInferenceUpdateOptions returns a ZeroShotClassificationInferenceUpdateOptions.

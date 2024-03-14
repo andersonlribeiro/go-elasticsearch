@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Package unassignedinformationreason
 package unassignedinformationreason
 
 import "strings"
 
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/cluster/allocation_explain/types.ts#L127-L146
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/cluster/allocation_explain/types.ts#L127-L146
 type UnassignedInformationReason struct {
 	Name string
 }
@@ -67,7 +65,7 @@ func (u UnassignedInformationReason) MarshalText() (text []byte, err error) {
 }
 
 func (u *UnassignedInformationReason) UnmarshalText(text []byte) error {
-	switch strings.ToLower(string(text)) {
+	switch strings.ReplaceAll(strings.ToLower(string(text)), "\"", "") {
 
 	case "INDEX_CREATED":
 		*u = INDEXCREATED

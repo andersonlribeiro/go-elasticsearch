@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // DataframeEvaluationClassificationMetricsAucRoc type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/DataframeEvaluation.ts#L85-L90
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/DataframeEvaluation.ts#L85-L90
 type DataframeEvaluationClassificationMetricsAucRoc struct {
 	// ClassName Name of the only class that is treated as positive during AUC ROC
 	// calculation. Other classes are treated as negative ("one-vs-all" strategy).
@@ -34,6 +40,45 @@ type DataframeEvaluationClassificationMetricsAucRoc struct {
 	// IncludeCurve Whether or not the curve should be returned in addition to the score. Default
 	// value is false.
 	IncludeCurve *bool `json:"include_curve,omitempty"`
+}
+
+func (s *DataframeEvaluationClassificationMetricsAucRoc) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "class_name":
+			if err := dec.Decode(&s.ClassName); err != nil {
+				return err
+			}
+
+		case "include_curve":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.IncludeCurve = &value
+			case bool:
+				s.IncludeCurve = &v
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewDataframeEvaluationClassificationMetricsAucRoc returns a DataframeEvaluationClassificationMetricsAucRoc.

@@ -15,19 +15,54 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // ClusterComponentTemplate type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/cluster/_types/ComponentTemplate.ts#L26-L29
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/cluster/_types/ComponentTemplate.ts#L30-L33
 type ClusterComponentTemplate struct {
 	ComponentTemplate ComponentTemplateNode `json:"component_template"`
 	Name              string                `json:"name"`
+}
+
+func (s *ClusterComponentTemplate) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "component_template":
+			if err := dec.Decode(&s.ComponentTemplate); err != nil {
+				return err
+			}
+
+		case "name":
+			if err := dec.Decode(&s.Name); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewClusterComponentTemplate returns a ClusterComponentTemplate.

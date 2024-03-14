@@ -15,22 +15,80 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // Ensemble type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/put_trained_model/types.ts#L93-L99
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/put_trained_model/types.ts#L93-L99
 type Ensemble struct {
 	AggregateOutput      *AggregateOutput `json:"aggregate_output,omitempty"`
 	ClassificationLabels []string         `json:"classification_labels,omitempty"`
 	FeatureNames         []string         `json:"feature_names,omitempty"`
 	TargetType           *string          `json:"target_type,omitempty"`
 	TrainedModels        []TrainedModel   `json:"trained_models"`
+}
+
+func (s *Ensemble) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "aggregate_output":
+			if err := dec.Decode(&s.AggregateOutput); err != nil {
+				return err
+			}
+
+		case "classification_labels":
+			if err := dec.Decode(&s.ClassificationLabels); err != nil {
+				return err
+			}
+
+		case "feature_names":
+			if err := dec.Decode(&s.FeatureNames); err != nil {
+				return err
+			}
+
+		case "target_type":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.TargetType = &o
+
+		case "trained_models":
+			if err := dec.Decode(&s.TrainedModels); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewEnsemble returns a Ensemble.

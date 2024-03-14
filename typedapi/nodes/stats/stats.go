@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Returns statistical information about nodes in the cluster.
 package stats
 
 import (
-	gobytes "bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -36,7 +34,7 @@ import (
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
-
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/level"
 )
 
@@ -58,13 +56,17 @@ type Stats struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
 
 	nodeid      string
 	metric      string
 	indexmetric string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewStats type alias for index.
@@ -82,13 +84,18 @@ func NewStatsFunc(tp elastictransport.Interface) NewStats {
 
 // Returns statistical information about nodes in the cluster.
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/{branch}/cluster-nodes-stats.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
 func New(tp elastictransport.Interface) *Stats {
 	r := &Stats{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -118,6 +125,9 @@ func (r *Stats) HttpRequest(ctx context.Context) (*http.Request, error) {
 		path.WriteString("_nodes")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "nodeid", r.nodeid)
+		}
 		path.WriteString(r.nodeid)
 		path.WriteString("/")
 		path.WriteString("stats")
@@ -130,6 +140,9 @@ func (r *Stats) HttpRequest(ctx context.Context) (*http.Request, error) {
 		path.WriteString("stats")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "metric", r.metric)
+		}
 		path.WriteString(r.metric)
 
 		method = http.MethodGet
@@ -138,11 +151,17 @@ func (r *Stats) HttpRequest(ctx context.Context) (*http.Request, error) {
 		path.WriteString("_nodes")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "nodeid", r.nodeid)
+		}
 		path.WriteString(r.nodeid)
 		path.WriteString("/")
 		path.WriteString("stats")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "metric", r.metric)
+		}
 		path.WriteString(r.metric)
 
 		method = http.MethodGet
@@ -153,9 +172,15 @@ func (r *Stats) HttpRequest(ctx context.Context) (*http.Request, error) {
 		path.WriteString("stats")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "metric", r.metric)
+		}
 		path.WriteString(r.metric)
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "indexmetric", r.indexmetric)
+		}
 		path.WriteString(r.indexmetric)
 
 		method = http.MethodGet
@@ -164,14 +189,23 @@ func (r *Stats) HttpRequest(ctx context.Context) (*http.Request, error) {
 		path.WriteString("_nodes")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "nodeid", r.nodeid)
+		}
 		path.WriteString(r.nodeid)
 		path.WriteString("/")
 		path.WriteString("stats")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "metric", r.metric)
+		}
 		path.WriteString(r.metric)
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "indexmetric", r.indexmetric)
+		}
 		path.WriteString(r.indexmetric)
 
 		method = http.MethodGet
@@ -185,9 +219,9 @@ func (r *Stats) HttpRequest(ctx context.Context) (*http.Request, error) {
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -203,25 +237,116 @@ func (r *Stats) HttpRequest(ctx context.Context) (*http.Request, error) {
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r Stats) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r Stats) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "nodes.stats")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "nodes.stats")
+		if reader := instrument.RecordRequestBody(ctx, "nodes.stats", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "nodes.stats")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the Stats query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the Stats query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a stats.Response
+func (r Stats) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "nodes.stats")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r Stats) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r Stats) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "nodes.stats")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -236,6 +361,14 @@ func (r Stats) IsSuccess(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the Stats query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
+	}
+
 	return false, nil
 }
 
@@ -248,18 +381,18 @@ func (r *Stats) Header(key, value string) *Stats {
 
 // NodeId Comma-separated list of node IDs or names used to limit returned information.
 // API Name: nodeid
-func (r *Stats) NodeId(v string) *Stats {
+func (r *Stats) NodeId(nodeid string) *Stats {
 	r.paramSet |= nodeidMask
-	r.nodeid = v
+	r.nodeid = nodeid
 
 	return r
 }
 
 // Metric Limit the information returned to the specified metrics
 // API Name: metric
-func (r *Stats) Metric(v string) *Stats {
+func (r *Stats) Metric(metric string) *Stats {
 	r.paramSet |= metricMask
-	r.metric = v
+	r.metric = metric
 
 	return r
 }
@@ -267,9 +400,9 @@ func (r *Stats) Metric(v string) *Stats {
 // IndexMetric Limit the information returned for indices metric to the specific index
 // metrics. It can be used only if indices (or all) metric is specified.
 // API Name: indexmetric
-func (r *Stats) IndexMetric(v string) *Stats {
+func (r *Stats) IndexMetric(indexmetric string) *Stats {
 	r.paramSet |= indexmetricMask
-	r.indexmetric = v
+	r.indexmetric = indexmetric
 
 	return r
 }
@@ -277,8 +410,8 @@ func (r *Stats) IndexMetric(v string) *Stats {
 // CompletionFields Comma-separated list or wildcard expressions of fields to include in
 // fielddata and suggest statistics.
 // API name: completion_fields
-func (r *Stats) CompletionFields(value string) *Stats {
-	r.values.Set("completion_fields", value)
+func (r *Stats) CompletionFields(fields ...string) *Stats {
+	r.values.Set("completion_fields", strings.Join(fields, ","))
 
 	return r
 }
@@ -286,8 +419,8 @@ func (r *Stats) CompletionFields(value string) *Stats {
 // FielddataFields Comma-separated list or wildcard expressions of fields to include in
 // fielddata statistics.
 // API name: fielddata_fields
-func (r *Stats) FielddataFields(value string) *Stats {
-	r.values.Set("fielddata_fields", value)
+func (r *Stats) FielddataFields(fields ...string) *Stats {
+	r.values.Set("fielddata_fields", strings.Join(fields, ","))
 
 	return r
 }
@@ -295,16 +428,16 @@ func (r *Stats) FielddataFields(value string) *Stats {
 // Fields Comma-separated list or wildcard expressions of fields to include in the
 // statistics.
 // API name: fields
-func (r *Stats) Fields(value string) *Stats {
-	r.values.Set("fields", value)
+func (r *Stats) Fields(fields ...string) *Stats {
+	r.values.Set("fields", strings.Join(fields, ","))
 
 	return r
 }
 
 // Groups Comma-separated list of search groups to include in the search statistics.
 // API name: groups
-func (r *Stats) Groups(b bool) *Stats {
-	r.values.Set("groups", strconv.FormatBool(b))
+func (r *Stats) Groups(groups bool) *Stats {
+	r.values.Set("groups", strconv.FormatBool(groups))
 
 	return r
 }
@@ -312,8 +445,8 @@ func (r *Stats) Groups(b bool) *Stats {
 // IncludeSegmentFileSizes If true, the call reports the aggregated disk usage of each one of the Lucene
 // index files (only applies if segment stats are requested).
 // API name: include_segment_file_sizes
-func (r *Stats) IncludeSegmentFileSizes(b bool) *Stats {
-	r.values.Set("include_segment_file_sizes", strconv.FormatBool(b))
+func (r *Stats) IncludeSegmentFileSizes(includesegmentfilesizes bool) *Stats {
+	r.values.Set("include_segment_file_sizes", strconv.FormatBool(includesegmentfilesizes))
 
 	return r
 }
@@ -321,8 +454,8 @@ func (r *Stats) IncludeSegmentFileSizes(b bool) *Stats {
 // Level Indicates whether statistics are aggregated at the cluster, index, or shard
 // level.
 // API name: level
-func (r *Stats) Level(enum level.Level) *Stats {
-	r.values.Set("level", enum.String())
+func (r *Stats) Level(level level.Level) *Stats {
+	r.values.Set("level", level.String())
 
 	return r
 }
@@ -330,8 +463,8 @@ func (r *Stats) Level(enum level.Level) *Stats {
 // MasterTimeout Period to wait for a connection to the master node. If no response is
 // received before the timeout expires, the request fails and returns an error.
 // API name: master_timeout
-func (r *Stats) MasterTimeout(value string) *Stats {
-	r.values.Set("master_timeout", value)
+func (r *Stats) MasterTimeout(duration string) *Stats {
+	r.values.Set("master_timeout", duration)
 
 	return r
 }
@@ -339,25 +472,29 @@ func (r *Stats) MasterTimeout(value string) *Stats {
 // Timeout Period to wait for a response. If no response is received before the timeout
 // expires, the request fails and returns an error.
 // API name: timeout
-func (r *Stats) Timeout(value string) *Stats {
-	r.values.Set("timeout", value)
+func (r *Stats) Timeout(duration string) *Stats {
+	r.values.Set("timeout", duration)
 
 	return r
 }
 
 // Types A comma-separated list of document types for the indexing index metric.
 // API name: types
-func (r *Stats) Types(value string) *Stats {
-	r.values.Set("types", value)
+func (r *Stats) Types(types ...string) *Stats {
+	tmp := []string{}
+	for _, item := range types {
+		tmp = append(tmp, fmt.Sprintf("%v", item))
+	}
+	r.values.Set("types", strings.Join(tmp, ","))
 
 	return r
 }
 
-// IncludeUnloadedSegments If set to true segment stats will include stats for segments that are not
-// currently loaded into memory
+// IncludeUnloadedSegments If `true`, the response includes information from segments that are not
+// loaded into memory.
 // API name: include_unloaded_segments
-func (r *Stats) IncludeUnloadedSegments(b bool) *Stats {
-	r.values.Set("include_unloaded_segments", strconv.FormatBool(b))
+func (r *Stats) IncludeUnloadedSegments(includeunloadedsegments bool) *Stats {
+	r.values.Set("include_unloaded_segments", strconv.FormatBool(includeunloadedsegments))
 
 	return r
 }

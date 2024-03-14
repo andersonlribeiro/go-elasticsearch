@@ -15,17 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Provides low-level information about the segments in the shards of an index.
 package segments
 
 import (
-	gobytes "bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -35,7 +33,7 @@ import (
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
-
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/bytes"
 )
 
@@ -53,11 +51,15 @@ type Segments struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
 
 	index string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewSegments type alias for index.
@@ -75,13 +77,18 @@ func NewSegmentsFunc(tp elastictransport.Interface) NewSegments {
 
 // Provides low-level information about the segments in the shards of an index.
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/{branch}/cat-segments.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/cat-segments.html
 func New(tp elastictransport.Interface) *Segments {
 	r := &Segments{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -113,6 +120,9 @@ func (r *Segments) HttpRequest(ctx context.Context) (*http.Request, error) {
 		path.WriteString("segments")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "index", r.index)
+		}
 		path.WriteString(r.index)
 
 		method = http.MethodGet
@@ -126,9 +136,9 @@ func (r *Segments) HttpRequest(ctx context.Context) (*http.Request, error) {
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -144,25 +154,116 @@ func (r *Segments) HttpRequest(ctx context.Context) (*http.Request, error) {
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r Segments) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r Segments) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "cat.segments")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "cat.segments")
+		if reader := instrument.RecordRequestBody(ctx, "cat.segments", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "cat.segments")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the Segments query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the Segments query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a segments.Response
+func (r Segments) Do(providedCtx context.Context) (Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "cat.segments")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(&response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r Segments) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r Segments) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "cat.segments")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -177,6 +278,14 @@ func (r Segments) IsSuccess(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the Segments query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
+	}
+
 	return false, nil
 }
 
@@ -187,19 +296,23 @@ func (r *Segments) Header(key, value string) *Segments {
 	return r
 }
 
-// Index A comma-separated list of index names to limit the returned information
+// Index A comma-separated list of data streams, indices, and aliases used to limit
+// the request.
+// Supports wildcards (`*`).
+// To target all data streams and indices, omit this parameter or use `*` or
+// `_all`.
 // API Name: index
-func (r *Segments) Index(v string) *Segments {
+func (r *Segments) Index(index string) *Segments {
 	r.paramSet |= indexMask
-	r.index = v
+	r.index = index
 
 	return r
 }
 
-// Bytes The unit in which to display byte values
+// Bytes The unit used to display byte values.
 // API name: bytes
-func (r *Segments) Bytes(enum bytes.Bytes) *Segments {
-	r.values.Set("bytes", enum.String())
+func (r *Segments) Bytes(bytes bytes.Bytes) *Segments {
+	r.values.Set("bytes", bytes.String())
 
 	return r
 }

@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // AggregationProfile type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/search/_types/profile.ts#L77-L84
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/search/_types/profile.ts#L77-L84
 type AggregationProfile struct {
 	Breakdown   AggregationBreakdown     `json:"breakdown"`
 	Children    []AggregationProfile     `json:"children,omitempty"`
@@ -32,6 +38,70 @@ type AggregationProfile struct {
 	Description string                   `json:"description"`
 	TimeInNanos int64                    `json:"time_in_nanos"`
 	Type        string                   `json:"type"`
+}
+
+func (s *AggregationProfile) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "breakdown":
+			if err := dec.Decode(&s.Breakdown); err != nil {
+				return err
+			}
+
+		case "children":
+			if err := dec.Decode(&s.Children); err != nil {
+				return err
+			}
+
+		case "debug":
+			if err := dec.Decode(&s.Debug); err != nil {
+				return err
+			}
+
+		case "description":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Description = o
+
+		case "time_in_nanos":
+			if err := dec.Decode(&s.TimeInNanos); err != nil {
+				return err
+			}
+
+		case "type":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Type = o
+
+		}
+	}
+	return nil
 }
 
 // NewAggregationProfile returns a AggregationProfile.

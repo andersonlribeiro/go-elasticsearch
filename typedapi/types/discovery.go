@@ -15,22 +15,29 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 // Discovery type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/_types/Stats.ts#L76-L82
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/_types/Stats.ts#L201-L219
 type Discovery struct {
-	ClusterApplierStats     *ClusterAppliedStats          `json:"cluster_applier_stats,omitempty"`
-	ClusterStateQueue       *ClusterStateQueue            `json:"cluster_state_queue,omitempty"`
-	ClusterStateUpdate      map[string]ClusterStateUpdate `json:"cluster_state_update,omitempty"`
-	PublishedClusterStates  *PublishedClusterStates       `json:"published_cluster_states,omitempty"`
-	SerializedClusterStates *SerializedClusterState       `json:"serialized_cluster_states,omitempty"`
+	ClusterApplierStats *ClusterAppliedStats `json:"cluster_applier_stats,omitempty"`
+	// ClusterStateQueue Contains statistics for the cluster state queue of the node.
+	ClusterStateQueue *ClusterStateQueue `json:"cluster_state_queue,omitempty"`
+	// ClusterStateUpdate Contains low-level statistics about how long various activities took during
+	// cluster state updates while the node was the elected master.
+	// Omitted if the node is not master-eligible.
+	// Every field whose name ends in `_time` within this object is also represented
+	// as a raw number of milliseconds in a field whose name ends in `_time_millis`.
+	// The human-readable fields with a `_time` suffix are only returned if
+	// requested with the `?human=true` query parameter.
+	ClusterStateUpdate map[string]ClusterStateUpdate `json:"cluster_state_update,omitempty"`
+	// PublishedClusterStates Contains statistics for the published cluster states of the node.
+	PublishedClusterStates  *PublishedClusterStates `json:"published_cluster_states,omitempty"`
+	SerializedClusterStates *SerializedClusterState `json:"serialized_cluster_states,omitempty"`
 }
 
 // NewDiscovery returns a Discovery.

@@ -15,18 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Returns information about the tasks currently executing on one or more nodes
 // in the cluster.
 package tasks
 
 import (
-	gobytes "bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -37,6 +35,7 @@ import (
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 // ErrBuildPath is returned in case of missing parameters within the build of the request.
@@ -49,9 +48,13 @@ type Tasks struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewTasks type alias for index.
@@ -70,13 +73,18 @@ func NewTasksFunc(tp elastictransport.Interface) NewTasks {
 // Returns information about the tasks currently executing on one or more nodes
 // in the cluster.
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/{branch}/tasks.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/tasks.html
 func New(tp elastictransport.Interface) *Tasks {
 	r := &Tasks{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -111,9 +119,9 @@ func (r *Tasks) HttpRequest(ctx context.Context) (*http.Request, error) {
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -129,25 +137,116 @@ func (r *Tasks) HttpRequest(ctx context.Context) (*http.Request, error) {
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r Tasks) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r Tasks) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "cat.tasks")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "cat.tasks")
+		if reader := instrument.RecordRequestBody(ctx, "cat.tasks", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "cat.tasks")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the Tasks query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the Tasks query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a tasks.Response
+func (r Tasks) Do(providedCtx context.Context) (Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "cat.tasks")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(&response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r Tasks) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r Tasks) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "cat.tasks")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -162,6 +261,14 @@ func (r Tasks) IsSuccess(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the Tasks query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
+	}
+
 	return false, nil
 }
 
@@ -172,33 +279,42 @@ func (r *Tasks) Header(key, value string) *Tasks {
 	return r
 }
 
-// Actions A comma-separated list of actions that should be returned. Leave empty to
-// return all.
+// Actions The task action names, which are used to limit the response.
 // API name: actions
-func (r *Tasks) Actions(value string) *Tasks {
-	r.values.Set("actions", value)
+func (r *Tasks) Actions(actions ...string) *Tasks {
+	tmp := []string{}
+	for _, item := range actions {
+		tmp = append(tmp, fmt.Sprintf("%v", item))
+	}
+	r.values.Set("actions", strings.Join(tmp, ","))
 
 	return r
 }
 
-// Detailed Return detailed task information (default: false)
+// Detailed If `true`, the response includes detailed information about shard recoveries.
 // API name: detailed
-func (r *Tasks) Detailed(b bool) *Tasks {
-	r.values.Set("detailed", strconv.FormatBool(b))
+func (r *Tasks) Detailed(detailed bool) *Tasks {
+	r.values.Set("detailed", strconv.FormatBool(detailed))
 
 	return r
 }
 
+// NodeId Unique node identifiers, which are used to limit the response.
 // API name: node_id
-func (r *Tasks) NodeId(value string) *Tasks {
-	r.values.Set("node_id", value)
+func (r *Tasks) NodeId(nodeids ...string) *Tasks {
+	tmp := []string{}
+	for _, item := range nodeids {
+		tmp = append(tmp, fmt.Sprintf("%v", item))
+	}
+	r.values.Set("node_id", strings.Join(tmp, ","))
 
 	return r
 }
 
-// API name: parent_task
-func (r *Tasks) ParentTask(value string) *Tasks {
-	r.values.Set("parent_task", value)
+// ParentTaskId The parent task identifier, which is used to limit the response.
+// API name: parent_task_id
+func (r *Tasks) ParentTaskId(parenttaskid string) *Tasks {
+	r.values.Set("parent_task_id", parenttaskid)
 
 	return r
 }

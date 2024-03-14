@@ -15,19 +15,54 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // Invocation type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/slm/_types/SnapshotLifecycle.ts#L138-L141
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/slm/_types/SnapshotLifecycle.ts#L138-L141
 type Invocation struct {
 	SnapshotName string   `json:"snapshot_name"`
 	Time         DateTime `json:"time"`
+}
+
+func (s *Invocation) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "snapshot_name":
+			if err := dec.Decode(&s.SnapshotName); err != nil {
+				return err
+			}
+
+		case "time":
+			if err := dec.Decode(&s.Time); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewInvocation returns a Invocation.

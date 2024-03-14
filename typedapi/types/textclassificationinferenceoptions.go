@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // TextClassificationInferenceOptions type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/inference.ts#L174-L184
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/inference.ts#L189-L199
 type TextClassificationInferenceOptions struct {
 	// ClassificationLabels Classification labels to apply other than the stored labels. Must have the
 	// same deminsions as the default configured labels
@@ -36,6 +42,64 @@ type TextClassificationInferenceOptions struct {
 	ResultsField *string `json:"results_field,omitempty"`
 	// Tokenization The tokenization options
 	Tokenization *TokenizationConfigContainer `json:"tokenization,omitempty"`
+}
+
+func (s *TextClassificationInferenceOptions) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "classification_labels":
+			if err := dec.Decode(&s.ClassificationLabels); err != nil {
+				return err
+			}
+
+		case "num_top_classes":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.NumTopClasses = &value
+			case float64:
+				f := int(v)
+				s.NumTopClasses = &f
+			}
+
+		case "results_field":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.ResultsField = &o
+
+		case "tokenization":
+			if err := dec.Decode(&s.Tokenization); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewTextClassificationInferenceOptions returns a TextClassificationInferenceOptions.

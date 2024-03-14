@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Creates a new document in the index.
 //
@@ -32,12 +30,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
-
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/versiontype"
 )
@@ -58,15 +57,20 @@ type Create struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
-	req interface{}
-	raw json.RawMessage
+	req      interface{}
+	deferred []func(request interface{}) error
+	buf      *gobytes.Buffer
 
 	paramSet int
 
 	id    string
 	index string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewCreate type alias for index.
@@ -78,9 +82,9 @@ func NewCreateFunc(tp elastictransport.Interface) NewCreate {
 	return func(index, id string) *Create {
 		n := New(tp)
 
-		n.Id(id)
+		n._id(id)
 
-		n.Index(index)
+		n._index(index)
 
 		return n
 	}
@@ -91,13 +95,20 @@ func NewCreateFunc(tp elastictransport.Interface) NewCreate {
 // Returns a 409 response when a document with a same ID already exists in the
 // index.
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/master/docs-index_.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html
 func New(tp elastictransport.Interface) *Create {
 	r := &Create{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+
+		buf: gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -105,7 +116,7 @@ func New(tp elastictransport.Interface) *Create {
 
 // Raw takes a json payload as input which is then passed to the http.Request
 // If specified Raw takes precedence on Request method.
-func (r *Create) Raw(raw json.RawMessage) *Create {
+func (r *Create) Raw(raw io.Reader) *Create {
 	r.raw = raw
 
 	return r
@@ -114,6 +125,13 @@ func (r *Create) Raw(raw json.RawMessage) *Create {
 // Request allows to set the request property with the appropriate payload.
 func (r *Create) Request(req interface{}) *Create {
 	r.req = req
+
+	return r
+}
+
+// Document allows to set the request property with the appropriate payload.
+func (r *Create) Document(document interface{}) *Create {
+	r.req = document
 
 	return r
 }
@@ -127,9 +145,17 @@ func (r *Create) HttpRequest(ctx context.Context) (*http.Request, error) {
 
 	var err error
 
-	if r.raw != nil {
-		r.buf.Write(r.raw)
-	} else if r.req != nil {
+	if len(r.deferred) > 0 {
+		for _, f := range r.deferred {
+			deferredErr := f(r.req)
+			if deferredErr != nil {
+				return nil, deferredErr
+			}
+		}
+	}
+
+	if r.raw == nil && r.req != nil {
+
 		data, err := json.Marshal(r.req)
 
 		if err != nil {
@@ -137,6 +163,11 @@ func (r *Create) HttpRequest(ctx context.Context) (*http.Request, error) {
 		}
 
 		r.buf.Write(data)
+
+	}
+
+	if r.buf.Len() > 0 {
+		r.raw = r.buf
 	}
 
 	r.path.Scheme = "http"
@@ -145,11 +176,17 @@ func (r *Create) HttpRequest(ctx context.Context) (*http.Request, error) {
 	case r.paramSet == indexMask|idMask:
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "index", r.index)
+		}
 		path.WriteString(r.index)
 		path.WriteString("/")
 		path.WriteString("_create")
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "id", r.id)
+		}
 		path.WriteString(r.id)
 
 		method = http.MethodPut
@@ -163,15 +200,15 @@ func (r *Create) HttpRequest(ctx context.Context) (*http.Request, error) {
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
 
 	if req.Header.Get("Content-Type") == "" {
-		if r.buf.Len() > 0 {
+		if r.raw != nil {
 			req.Header.Set("Content-Type", "application/vnd.elasticsearch+json;compatible-with=8")
 		}
 	}
@@ -187,19 +224,100 @@ func (r *Create) HttpRequest(ctx context.Context) (*http.Request, error) {
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r Create) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r Create) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "create")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "create")
+		if reader := instrument.RecordRequestBody(ctx, "create", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "create")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the Create query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the Create query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
+}
+
+// Do runs the request through the transport, handle the response and returns a create.Response
+func (r Create) Do(providedCtx context.Context) (*Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "create")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
 }
 
 // Header set a key, value pair in the Create headers map.
@@ -209,81 +327,94 @@ func (r *Create) Header(key, value string) *Create {
 	return r
 }
 
-// Id Document ID
+// Id Unique identifier for the document.
 // API Name: id
-func (r *Create) Id(v string) *Create {
+func (r *Create) _id(id string) *Create {
 	r.paramSet |= idMask
-	r.id = v
+	r.id = id
 
 	return r
 }
 
-// Index The name of the index
+// Index Name of the data stream or index to target.
+// If the target doesn’t exist and matches the name or wildcard (`*`) pattern of
+// an index template with a `data_stream` definition, this request creates the
+// data stream.
+// If the target doesn’t exist and doesn’t match a data stream template, this
+// request creates the index.
 // API Name: index
-func (r *Create) Index(v string) *Create {
+func (r *Create) _index(index string) *Create {
 	r.paramSet |= indexMask
-	r.index = v
+	r.index = index
 
 	return r
 }
 
-// Pipeline The pipeline id to preprocess incoming documents with
+// Pipeline ID of the pipeline to use to preprocess incoming documents.
+// If the index has a default ingest pipeline specified, then setting the value
+// to `_none` disables the default ingest pipeline for this request.
+// If a final pipeline is configured it will always run, regardless of the value
+// of this parameter.
 // API name: pipeline
-func (r *Create) Pipeline(value string) *Create {
-	r.values.Set("pipeline", value)
+func (r *Create) Pipeline(pipeline string) *Create {
+	r.values.Set("pipeline", pipeline)
 
 	return r
 }
 
-// Refresh If `true` then refresh the affected shards to make this operation visible to
-// search, if `wait_for` then wait for a refresh to make this operation visible
-// to search, if `false` (the default) then do nothing with refreshes.
+// Refresh If `true`, Elasticsearch refreshes the affected shards to make this operation
+// visible to search, if `wait_for` then wait for a refresh to make this
+// operation visible to search, if `false` do nothing with refreshes.
+// Valid values: `true`, `false`, `wait_for`.
 // API name: refresh
-func (r *Create) Refresh(enum refresh.Refresh) *Create {
-	r.values.Set("refresh", enum.String())
+func (r *Create) Refresh(refresh refresh.Refresh) *Create {
+	r.values.Set("refresh", refresh.String())
 
 	return r
 }
 
-// Routing Specific routing value
+// Routing Custom value used to route operations to a specific shard.
 // API name: routing
-func (r *Create) Routing(value string) *Create {
-	r.values.Set("routing", value)
+func (r *Create) Routing(routing string) *Create {
+	r.values.Set("routing", routing)
 
 	return r
 }
 
-// Timeout Explicit operation timeout
+// Timeout Period the request waits for the following operations: automatic index
+// creation, dynamic mapping updates, waiting for active shards.
 // API name: timeout
-func (r *Create) Timeout(value string) *Create {
-	r.values.Set("timeout", value)
+func (r *Create) Timeout(duration string) *Create {
+	r.values.Set("timeout", duration)
 
 	return r
 }
 
-// Version Explicit version number for concurrency control
+// Version Explicit version number for concurrency control.
+// The specified version must match the current version of the document for the
+// request to succeed.
 // API name: version
-func (r *Create) Version(value string) *Create {
-	r.values.Set("version", value)
+func (r *Create) Version(versionnumber string) *Create {
+	r.values.Set("version", versionnumber)
 
 	return r
 }
 
-// VersionType Specific version type
+// VersionType Specific version type: `external`, `external_gte`.
 // API name: version_type
-func (r *Create) VersionType(enum versiontype.VersionType) *Create {
-	r.values.Set("version_type", enum.String())
+func (r *Create) VersionType(versiontype versiontype.VersionType) *Create {
+	r.values.Set("version_type", versiontype.String())
 
 	return r
 }
 
-// WaitForActiveShards Sets the number of shard copies that must be active before proceeding with
-// the index operation. Defaults to 1, meaning the primary shard only. Set to
-// `all` for all shard copies, otherwise set to any non-negative value less than
-// or equal to the total number of copies for the shard (number of replicas + 1)
+// WaitForActiveShards The number of shard copies that must be active before proceeding with the
+// operation.
+// Set to `all` or any positive integer up to the total number of shards in the
+// index (`number_of_replicas+1`).
 // API name: wait_for_active_shards
-func (r *Create) WaitForActiveShards(value string) *Create {
-	r.values.Set("wait_for_active_shards", value)
+func (r *Create) WaitForActiveShards(waitforactiveshards string) *Create {
+	r.values.Set("wait_for_active_shards", waitforactiveshards)
 
 	return r
 }

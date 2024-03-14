@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package deletebyquery
 
@@ -31,11 +29,16 @@ import (
 
 // Request holds the request body struct for the package deletebyquery
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/delete_by_query/DeleteByQueryRequest.ts#L36-L81
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/delete_by_query/DeleteByQueryRequest.ts#L36-L209
 type Request struct {
-	MaxDocs *int64              `json:"max_docs,omitempty"`
-	Query   *types.Query        `json:"query,omitempty"`
-	Slice   *types.SlicedScroll `json:"slice,omitempty"`
+
+	// MaxDocs The maximum number of documents to delete.
+	MaxDocs *int64 `json:"max_docs,omitempty"`
+	// Query Specifies the documents to delete using the Query DSL.
+	Query *types.Query `json:"query,omitempty"`
+	// Slice Slice the request manually using the provided slice ID and total number of
+	// slices.
+	Slice *types.SlicedScroll `json:"slice,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -45,7 +48,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 

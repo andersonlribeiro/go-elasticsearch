@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // TrainedModelInferenceStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/TrainedModel.ts#L98-L118
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/TrainedModel.ts#L104-L124
 type TrainedModelInferenceStats struct {
 	// CacheMissCount The number of times the model was loaded for inference and was not retrieved
 	// from the cache.
@@ -43,6 +49,95 @@ type TrainedModelInferenceStats struct {
 	MissingAllFieldsCount int `json:"missing_all_fields_count"`
 	// Timestamp The time when the statistics were last updated.
 	Timestamp DateTime `json:"timestamp"`
+}
+
+func (s *TrainedModelInferenceStats) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "cache_miss_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.CacheMissCount = value
+			case float64:
+				f := int(v)
+				s.CacheMissCount = f
+			}
+
+		case "failure_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.FailureCount = value
+			case float64:
+				f := int(v)
+				s.FailureCount = f
+			}
+
+		case "inference_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.InferenceCount = value
+			case float64:
+				f := int(v)
+				s.InferenceCount = f
+			}
+
+		case "missing_all_fields_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.MissingAllFieldsCount = value
+			case float64:
+				f := int(v)
+				s.MissingAllFieldsCount = f
+			}
+
+		case "timestamp":
+			if err := dec.Decode(&s.Timestamp); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewTrainedModelInferenceStats returns a TrainedModelInferenceStats.

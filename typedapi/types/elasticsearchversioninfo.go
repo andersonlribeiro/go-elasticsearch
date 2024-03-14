@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // ElasticsearchVersionInfo type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/Base.ts#L54-L64
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/Base.ts#L54-L64
 type ElasticsearchVersionInfo struct {
 	BuildDate                        DateTime `json:"build_date"`
 	BuildFlavor                      string   `json:"build_flavor"`
@@ -35,6 +41,108 @@ type ElasticsearchVersionInfo struct {
 	LuceneVersion                    string   `json:"lucene_version"`
 	MinimumIndexCompatibilityVersion string   `json:"minimum_index_compatibility_version"`
 	MinimumWireCompatibilityVersion  string   `json:"minimum_wire_compatibility_version"`
+}
+
+func (s *ElasticsearchVersionInfo) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "build_date":
+			if err := dec.Decode(&s.BuildDate); err != nil {
+				return err
+			}
+
+		case "build_flavor":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.BuildFlavor = o
+
+		case "build_hash":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.BuildHash = o
+
+		case "build_snapshot":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.BuildSnapshot = value
+			case bool:
+				s.BuildSnapshot = v
+			}
+
+		case "build_type":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.BuildType = o
+
+		case "number":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Int = o
+
+		case "lucene_version":
+			if err := dec.Decode(&s.LuceneVersion); err != nil {
+				return err
+			}
+
+		case "minimum_index_compatibility_version":
+			if err := dec.Decode(&s.MinimumIndexCompatibilityVersion); err != nil {
+				return err
+			}
+
+		case "minimum_wire_compatibility_version":
+			if err := dec.Decode(&s.MinimumWireCompatibilityVersion); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewElasticsearchVersionInfo returns a ElasticsearchVersionInfo.

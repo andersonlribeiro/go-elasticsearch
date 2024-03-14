@@ -15,21 +15,104 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // CgroupCpu type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/nodes/_types/Stats.ts#L193-L198
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/nodes/_types/Stats.ts#L487-L504
 type CgroupCpu struct {
-	CfsPeriodMicros *int           `json:"cfs_period_micros,omitempty"`
-	CfsQuotaMicros  *int           `json:"cfs_quota_micros,omitempty"`
-	ControlGroup    *string        `json:"control_group,omitempty"`
-	Stat            *CgroupCpuStat `json:"stat,omitempty"`
+	// CfsPeriodMicros The period of time, in microseconds, for how regularly all tasks in the same
+	// cgroup as the Elasticsearch process should have their access to CPU resources
+	// reallocated.
+	CfsPeriodMicros *int `json:"cfs_period_micros,omitempty"`
+	// CfsQuotaMicros The total amount of time, in microseconds, for which all tasks in the same
+	// cgroup as the Elasticsearch process can run during one period
+	// `cfs_period_micros`.
+	CfsQuotaMicros *int `json:"cfs_quota_micros,omitempty"`
+	// ControlGroup The `cpu` control group to which the Elasticsearch process belongs.
+	ControlGroup *string `json:"control_group,omitempty"`
+	// Stat Contains CPU statistics for the node.
+	Stat *CgroupCpuStat `json:"stat,omitempty"`
+}
+
+func (s *CgroupCpu) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "cfs_period_micros":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.CfsPeriodMicros = &value
+			case float64:
+				f := int(v)
+				s.CfsPeriodMicros = &f
+			}
+
+		case "cfs_quota_micros":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.CfsQuotaMicros = &value
+			case float64:
+				f := int(v)
+				s.CfsQuotaMicros = &f
+			}
+
+		case "control_group":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.ControlGroup = &o
+
+		case "stat":
+			if err := dec.Decode(&s.Stat); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewCgroupCpu returns a CgroupCpu.

@@ -15,16 +15,21 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // TranslogRetention type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/_types/IndexSettings.ts#L373-L392
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/_types/IndexSettings.ts#L376-L395
 type TranslogRetention struct {
 	// Age This controls the maximum duration for which translog files are kept by each
 	// shard. Keeping more
@@ -35,7 +40,7 @@ type TranslogRetention struct {
 	// is ignored, and should not be set, if soft deletes are enabled. Soft deletes
 	// are enabled by default in
 	// indices created in Elasticsearch versions 7.0.0 and later.
-	Age *Duration `json:"age,omitempty"`
+	Age Duration `json:"age,omitempty"`
 	// Size This controls the total size of translog files to keep for each shard.
 	// Keeping more translog files increases
 	// the chance of performing an operation based sync when recovering a replica.
@@ -45,7 +50,37 @@ type TranslogRetention struct {
 	// set, if soft deletes are enabled. Soft deletes are enabled by default in
 	// indices created in Elasticsearch
 	// versions 7.0.0 and later.
-	Size *ByteSize `json:"size,omitempty"`
+	Size ByteSize `json:"size,omitempty"`
+}
+
+func (s *TranslogRetention) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "age":
+			if err := dec.Decode(&s.Age); err != nil {
+				return err
+			}
+
+		case "size":
+			if err := dec.Decode(&s.Size); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewTranslogRetention returns a TranslogRetention.

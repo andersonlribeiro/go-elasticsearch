@@ -15,19 +15,76 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // FileCountSnapshotStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/snapshot/_types/FileCountSnapshotStats.ts#L22-L25
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/snapshot/_types/FileCountSnapshotStats.ts#L22-L25
 type FileCountSnapshotStats struct {
 	FileCount   int   `json:"file_count"`
 	SizeInBytes int64 `json:"size_in_bytes"`
+}
+
+func (s *FileCountSnapshotStats) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "file_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.FileCount = value
+			case float64:
+				f := int(v)
+				s.FileCount = f
+			}
+
+		case "size_in_bytes":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.SizeInBytes = value
+			case float64:
+				f := int64(v)
+				s.SizeInBytes = f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewFileCountSnapshotStats returns a FileCountSnapshotStats.

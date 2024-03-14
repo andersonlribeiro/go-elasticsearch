@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // DataframeAnalyticsStatsDataCounts type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/DataframeAnalytics.ts#L361-L368
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/DataframeAnalytics.ts#L364-L371
 type DataframeAnalyticsStatsDataCounts struct {
 	// SkippedDocsCount The number of documents that are skipped during the analysis because they
 	// contained values that are not supported by the analysis. For example, outlier
@@ -37,6 +43,74 @@ type DataframeAnalyticsStatsDataCounts struct {
 	TestDocsCount int `json:"test_docs_count"`
 	// TrainingDocsCount The number of documents that are used for training the model.
 	TrainingDocsCount int `json:"training_docs_count"`
+}
+
+func (s *DataframeAnalyticsStatsDataCounts) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "skipped_docs_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.SkippedDocsCount = value
+			case float64:
+				f := int(v)
+				s.SkippedDocsCount = f
+			}
+
+		case "test_docs_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.TestDocsCount = value
+			case float64:
+				f := int(v)
+				s.TestDocsCount = f
+			}
+
+		case "training_docs_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.TrainingDocsCount = value
+			case float64:
+				f := int(v)
+				s.TrainingDocsCount = f
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewDataframeAnalyticsStatsDataCounts returns a DataframeAnalyticsStatsDataCounts.

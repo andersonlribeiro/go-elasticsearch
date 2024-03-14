@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // TrainedModelStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/ml/_types/TrainedModel.ts#L42-L60
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/ml/_types/TrainedModel.ts#L42-L60
 type TrainedModelStats struct {
 	// DeploymentStats A collection of deployment stats, which is present when the models are
 	// deployed.
@@ -34,7 +40,7 @@ type TrainedModelStats struct {
 	// Ingest A collection of ingest stats for the model across all nodes.
 	// The values are summations of the individual node statistics.
 	// The format matches the ingest section in the nodes stats API.
-	Ingest map[string]interface{} `json:"ingest,omitempty"`
+	Ingest map[string]json.RawMessage `json:"ingest,omitempty"`
 	// ModelId The unique identifier of the trained model.
 	ModelId string `json:"model_id"`
 	// ModelSizeStats A collection of model size stats.
@@ -43,10 +49,74 @@ type TrainedModelStats struct {
 	PipelineCount int `json:"pipeline_count"`
 }
 
+func (s *TrainedModelStats) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "deployment_stats":
+			if err := dec.Decode(&s.DeploymentStats); err != nil {
+				return err
+			}
+
+		case "inference_stats":
+			if err := dec.Decode(&s.InferenceStats); err != nil {
+				return err
+			}
+
+		case "ingest":
+			if s.Ingest == nil {
+				s.Ingest = make(map[string]json.RawMessage, 0)
+			}
+			if err := dec.Decode(&s.Ingest); err != nil {
+				return err
+			}
+
+		case "model_id":
+			if err := dec.Decode(&s.ModelId); err != nil {
+				return err
+			}
+
+		case "model_size_stats":
+			if err := dec.Decode(&s.ModelSizeStats); err != nil {
+				return err
+			}
+
+		case "pipeline_count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.PipelineCount = value
+			case float64:
+				f := int(v)
+				s.PipelineCount = f
+			}
+
+		}
+	}
+	return nil
+}
+
 // NewTrainedModelStats returns a TrainedModelStats.
 func NewTrainedModelStats() *TrainedModelStats {
 	r := &TrainedModelStats{
-		Ingest: make(map[string]interface{}, 0),
+		Ingest: make(map[string]json.RawMessage, 0),
 	}
 
 	return r

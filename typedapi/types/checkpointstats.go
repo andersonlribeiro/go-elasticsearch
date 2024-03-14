@@ -15,23 +15,89 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // CheckpointStats type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/transform/get_transform_stats/types.ts#L68-L75
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/transform/get_transform_stats/types.ts#L76-L83
 type CheckpointStats struct {
 	Checkpoint           int64              `json:"checkpoint"`
 	CheckpointProgress   *TransformProgress `json:"checkpoint_progress,omitempty"`
-	TimeUpperBound       *DateTime          `json:"time_upper_bound,omitempty"`
+	TimeUpperBound       DateTime           `json:"time_upper_bound,omitempty"`
 	TimeUpperBoundMillis *int64             `json:"time_upper_bound_millis,omitempty"`
-	Timestamp            *DateTime          `json:"timestamp,omitempty"`
+	Timestamp            DateTime           `json:"timestamp,omitempty"`
 	TimestampMillis      *int64             `json:"timestamp_millis,omitempty"`
+}
+
+func (s *CheckpointStats) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "checkpoint":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return err
+				}
+				s.Checkpoint = value
+			case float64:
+				f := int64(v)
+				s.Checkpoint = f
+			}
+
+		case "checkpoint_progress":
+			if err := dec.Decode(&s.CheckpointProgress); err != nil {
+				return err
+			}
+
+		case "time_upper_bound":
+			if err := dec.Decode(&s.TimeUpperBound); err != nil {
+				return err
+			}
+
+		case "time_upper_bound_millis":
+			if err := dec.Decode(&s.TimeUpperBoundMillis); err != nil {
+				return err
+			}
+
+		case "timestamp":
+			if err := dec.Decode(&s.Timestamp); err != nil {
+				return err
+			}
+
+		case "timestamp_millis":
+			if err := dec.Decode(&s.TimestampMillis); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewCheckpointStats returns a CheckpointStats.

@@ -15,26 +15,96 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // RecoveryBytes type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/recovery/types.ts#L38-L48
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/recovery/types.ts#L38-L48
 type RecoveryBytes struct {
 	Percent                      Percentage `json:"percent"`
-	Recovered                    *ByteSize  `json:"recovered,omitempty"`
-	RecoveredFromSnapshot        *ByteSize  `json:"recovered_from_snapshot,omitempty"`
-	RecoveredFromSnapshotInBytes *ByteSize  `json:"recovered_from_snapshot_in_bytes,omitempty"`
+	Recovered                    ByteSize   `json:"recovered,omitempty"`
+	RecoveredFromSnapshot        ByteSize   `json:"recovered_from_snapshot,omitempty"`
+	RecoveredFromSnapshotInBytes ByteSize   `json:"recovered_from_snapshot_in_bytes,omitempty"`
 	RecoveredInBytes             ByteSize   `json:"recovered_in_bytes"`
-	Reused                       *ByteSize  `json:"reused,omitempty"`
+	Reused                       ByteSize   `json:"reused,omitempty"`
 	ReusedInBytes                ByteSize   `json:"reused_in_bytes"`
-	Total                        *ByteSize  `json:"total,omitempty"`
+	Total                        ByteSize   `json:"total,omitempty"`
 	TotalInBytes                 ByteSize   `json:"total_in_bytes"`
+}
+
+func (s *RecoveryBytes) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "percent":
+			if err := dec.Decode(&s.Percent); err != nil {
+				return err
+			}
+
+		case "recovered":
+			if err := dec.Decode(&s.Recovered); err != nil {
+				return err
+			}
+
+		case "recovered_from_snapshot":
+			if err := dec.Decode(&s.RecoveredFromSnapshot); err != nil {
+				return err
+			}
+
+		case "recovered_from_snapshot_in_bytes":
+			if err := dec.Decode(&s.RecoveredFromSnapshotInBytes); err != nil {
+				return err
+			}
+
+		case "recovered_in_bytes":
+			if err := dec.Decode(&s.RecoveredInBytes); err != nil {
+				return err
+			}
+
+		case "reused":
+			if err := dec.Decode(&s.Reused); err != nil {
+				return err
+			}
+
+		case "reused_in_bytes":
+			if err := dec.Decode(&s.ReusedInBytes); err != nil {
+				return err
+			}
+
+		case "total":
+			if err := dec.Decode(&s.Total); err != nil {
+				return err
+			}
+
+		case "total_in_bytes":
+			if err := dec.Decode(&s.TotalInBytes); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewRecoveryBytes returns a RecoveryBytes.

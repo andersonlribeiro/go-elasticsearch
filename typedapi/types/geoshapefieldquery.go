@@ -15,24 +15,65 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/geoshaperelation"
 )
 
 // GeoShapeFieldQuery type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/query_dsl/geo.ts#L78-L82
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/query_dsl/geo.ts#L106-L117
 type GeoShapeFieldQuery struct {
-	IndexedShape *FieldLookup                       `json:"indexed_shape,omitempty"`
-	Relation     *geoshaperelation.GeoShapeRelation `json:"relation,omitempty"`
-	Shape        interface{}                        `json:"shape,omitempty"`
+	// IndexedShape Query using an indexed shape retrieved from the the specified document and
+	// path.
+	IndexedShape *FieldLookup `json:"indexed_shape,omitempty"`
+	// Relation Spatial relation operator used to search a geo field.
+	Relation *geoshaperelation.GeoShapeRelation `json:"relation,omitempty"`
+	Shape    json.RawMessage                    `json:"shape,omitempty"`
+}
+
+func (s *GeoShapeFieldQuery) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "indexed_shape":
+			if err := dec.Decode(&s.IndexedShape); err != nil {
+				return err
+			}
+
+		case "relation":
+			if err := dec.Decode(&s.Relation); err != nil {
+				return err
+			}
+
+		case "shape":
+			if err := dec.Decode(&s.Shape); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewGeoShapeFieldQuery returns a GeoShapeFieldQuery.

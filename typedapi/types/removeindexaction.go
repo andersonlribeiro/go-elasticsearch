@@ -15,20 +15,86 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // RemoveIndexAction type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/indices/update_aliases/types.ts#L55-L60
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/indices/update_aliases/types.ts#L124-L139
 type RemoveIndexAction struct {
-	Index     *string  `json:"index,omitempty"`
-	Indices   []string `json:"indices,omitempty"`
-	MustExist *bool    `json:"must_exist,omitempty"`
+	// Index Data stream or index for the action.
+	// Supports wildcards (`*`).
+	Index *string `json:"index,omitempty"`
+	// Indices Data streams or indices for the action.
+	// Supports wildcards (`*`).
+	Indices []string `json:"indices,omitempty"`
+	// MustExist If `true`, the alias must exist to perform the action.
+	MustExist *bool `json:"must_exist,omitempty"`
+}
+
+func (s *RemoveIndexAction) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "index":
+			if err := dec.Decode(&s.Index); err != nil {
+				return err
+			}
+
+		case "indices":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := new(string)
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.Indices = append(s.Indices, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.Indices); err != nil {
+					return err
+				}
+			}
+
+		case "must_exist":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.MustExist = &value
+			case bool:
+				s.MustExist = &v
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewRemoveIndexAction returns a RemoveIndexAction.

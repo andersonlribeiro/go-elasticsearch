@@ -15,20 +15,60 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
 // SearchInput type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/watcher/_types/Input.ts#L112-L116
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/watcher/_types/Input.ts#L112-L116
 type SearchInput struct {
 	Extract []string                     `json:"extract,omitempty"`
 	Request SearchInputRequestDefinition `json:"request"`
-	Timeout *Duration                    `json:"timeout,omitempty"`
+	Timeout Duration                     `json:"timeout,omitempty"`
+}
+
+func (s *SearchInput) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "extract":
+			if err := dec.Decode(&s.Extract); err != nil {
+				return err
+			}
+
+		case "request":
+			if err := dec.Decode(&s.Request); err != nil {
+				return err
+			}
+
+		case "timeout":
+			if err := dec.Decode(&s.Timeout); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewSearchInput returns a SearchInput.

@@ -15,22 +15,98 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // ShardFailure type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_types/Errors.ts#L50-L56
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_types/Errors.ts#L50-L56
 type ShardFailure struct {
 	Index  *string    `json:"index,omitempty"`
 	Node   *string    `json:"node,omitempty"`
 	Reason ErrorCause `json:"reason"`
 	Shard  int        `json:"shard"`
 	Status *string    `json:"status,omitempty"`
+}
+
+func (s *ShardFailure) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "index":
+			if err := dec.Decode(&s.Index); err != nil {
+				return err
+			}
+
+		case "node":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Node = &o
+
+		case "reason":
+			if err := dec.Decode(&s.Reason); err != nil {
+				return err
+			}
+
+		case "shard":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Shard = value
+			case float64:
+				f := int(v)
+				s.Shard = f
+			}
+
+		case "status":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Status = &o
+
+		}
+	}
+	return nil
 }
 
 // NewShardFailure returns a ShardFailure.

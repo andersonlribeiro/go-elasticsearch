@@ -15,18 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 // Returns the rollup capabilities of all jobs inside of a rollup index (e.g.
 // the index where rollup data is stored).
 package getrollupindexcaps
 
 import (
-	gobytes "bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -36,6 +34,7 @@ import (
 	"strings"
 
 	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 const (
@@ -52,11 +51,15 @@ type GetRollupIndexCaps struct {
 	values  url.Values
 	path    url.URL
 
-	buf *gobytes.Buffer
+	raw io.Reader
 
 	paramSet int
 
 	index string
+
+	spanStarted bool
+
+	instrument elastictransport.Instrumentation
 }
 
 // NewGetRollupIndexCaps type alias for index.
@@ -68,7 +71,7 @@ func NewGetRollupIndexCapsFunc(tp elastictransport.Interface) NewGetRollupIndexC
 	return func(index string) *GetRollupIndexCaps {
 		n := New(tp)
 
-		n.Index(index)
+		n._index(index)
 
 		return n
 	}
@@ -77,13 +80,18 @@ func NewGetRollupIndexCapsFunc(tp elastictransport.Interface) NewGetRollupIndexC
 // Returns the rollup capabilities of all jobs inside of a rollup index (e.g.
 // the index where rollup data is stored).
 //
-// https://www.elastic.co/guide/en/elasticsearch/reference/master/rollup-get-rollup-index-caps.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/rollup-get-rollup-index-caps.html
 func New(tp elastictransport.Interface) *GetRollupIndexCaps {
 	r := &GetRollupIndexCaps{
 		transport: tp,
 		values:    make(url.Values),
 		headers:   make(http.Header),
-		buf:       gobytes.NewBuffer(nil),
+	}
+
+	if instrumented, ok := r.transport.(elastictransport.Instrumented); ok {
+		if instrument := instrumented.InstrumentationEnabled(); instrument != nil {
+			r.instrument = instrument
+		}
 	}
 
 	return r
@@ -104,6 +112,9 @@ func (r *GetRollupIndexCaps) HttpRequest(ctx context.Context) (*http.Request, er
 	case r.paramSet == indexMask:
 		path.WriteString("/")
 
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordPathPart(ctx, "index", r.index)
+		}
 		path.WriteString(r.index)
 		path.WriteString("/")
 		path.WriteString("_rollup")
@@ -121,9 +132,9 @@ func (r *GetRollupIndexCaps) HttpRequest(ctx context.Context) (*http.Request, er
 	}
 
 	if ctx != nil {
-		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.buf)
+		req, err = http.NewRequestWithContext(ctx, method, r.path.String(), r.raw)
 	} else {
-		req, err = http.NewRequest(method, r.path.String(), r.buf)
+		req, err = http.NewRequest(method, r.path.String(), r.raw)
 	}
 
 	req.Header = r.headers.Clone()
@@ -139,25 +150,116 @@ func (r *GetRollupIndexCaps) HttpRequest(ctx context.Context) (*http.Request, er
 	return req, nil
 }
 
-// Do runs the http.Request through the provided transport.
-func (r GetRollupIndexCaps) Do(ctx context.Context) (*http.Response, error) {
+// Perform runs the http.Request through the provided transport and returns an http.Response.
+func (r GetRollupIndexCaps) Perform(providedCtx context.Context) (*http.Response, error) {
+	var ctx context.Context
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		if r.spanStarted == false {
+			ctx := instrument.Start(providedCtx, "rollup.get_rollup_index_caps")
+			defer instrument.Close(ctx)
+		}
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
 	req, err := r.HttpRequest(ctx)
 	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
 		return nil, err
 	}
 
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.BeforeRequest(req, "rollup.get_rollup_index_caps")
+		if reader := instrument.RecordRequestBody(ctx, "rollup.get_rollup_index_caps", r.raw); reader != nil {
+			req.Body = reader
+		}
+	}
 	res, err := r.transport.Perform(req)
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.AfterRequest(req, "elasticsearch", "rollup.get_rollup_index_caps")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("an error happened during the GetRollupIndexCaps query execution: %w", err)
+		localErr := fmt.Errorf("an error happened during the GetRollupIndexCaps query execution: %w", err)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, localErr)
+		}
+		return nil, localErr
 	}
 
 	return res, nil
 }
 
+// Do runs the request through the transport, handle the response and returns a getrollupindexcaps.Response
+func (r GetRollupIndexCaps) Do(providedCtx context.Context) (Response, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "rollup.get_rollup_index_caps")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	response := NewResponse()
+
+	res, err := r.Perform(ctx)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 299 {
+		err = json.NewDecoder(res.Body).Decode(&response)
+		if err != nil {
+			if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+				instrument.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+
+		return response, nil
+	}
+
+	errorResponse := types.NewElasticsearchError()
+	err = json.NewDecoder(res.Body).Decode(errorResponse)
+	if err != nil {
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return nil, err
+	}
+
+	if errorResponse.Status == 0 {
+		errorResponse.Status = res.StatusCode
+	}
+
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		instrument.RecordError(ctx, errorResponse)
+	}
+	return nil, errorResponse
+}
+
 // IsSuccess allows to run a query with a context and retrieve the result as a boolean.
 // This only exists for endpoints without a request payload and allows for quick control flow.
-func (r GetRollupIndexCaps) IsSuccess(ctx context.Context) (bool, error) {
-	res, err := r.Do(ctx)
+func (r GetRollupIndexCaps) IsSuccess(providedCtx context.Context) (bool, error) {
+	var ctx context.Context
+	r.spanStarted = true
+	if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+		ctx = instrument.Start(providedCtx, "rollup.get_rollup_index_caps")
+		defer instrument.Close(ctx)
+	}
+	if ctx == nil {
+		ctx = providedCtx
+	}
+
+	res, err := r.Perform(ctx)
 
 	if err != nil {
 		return false, err
@@ -172,6 +274,14 @@ func (r GetRollupIndexCaps) IsSuccess(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 
+	if res.StatusCode != 404 {
+		err := fmt.Errorf("an error happened during the GetRollupIndexCaps query execution, status code: %d", res.StatusCode)
+		if instrument, ok := r.instrument.(elastictransport.Instrumentation); ok {
+			instrument.RecordError(ctx, err)
+		}
+		return false, err
+	}
+
 	return false, nil
 }
 
@@ -182,11 +292,12 @@ func (r *GetRollupIndexCaps) Header(key, value string) *GetRollupIndexCaps {
 	return r
 }
 
-// Index The rollup index or index pattern to obtain rollup capabilities from.
+// Index Data stream or index to check for rollup capabilities.
+// Wildcard (`*`) expressions are supported.
 // API Name: index
-func (r *GetRollupIndexCaps) Index(v string) *GetRollupIndexCaps {
+func (r *GetRollupIndexCaps) _index(index string) *GetRollupIndexCaps {
 	r.paramSet |= indexMask
-	r.index = v
+	r.index = index
 
 	return r
 }

@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package putpolicy
 
@@ -31,11 +29,16 @@ import (
 
 // Request holds the request body struct for the package putpolicy
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/enrich/put_policy/PutEnrichPolicyRequest.ts#L24-L38
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/enrich/put_policy/PutEnrichPolicyRequest.ts#L24-L52
 type Request struct {
+
+	// GeoMatch Matches enrich data to incoming documents based on a `geo_shape` query.
 	GeoMatch *types.EnrichPolicy `json:"geo_match,omitempty"`
-	Match    *types.EnrichPolicy `json:"match,omitempty"`
-	Range    *types.EnrichPolicy `json:"range,omitempty"`
+	// Match Matches enrich data to incoming documents based on a `term` query.
+	Match *types.EnrichPolicy `json:"match,omitempty"`
+	// Range Matches a number, date, or IP address in incoming documents to a range in the
+	// enrich index based on a `term` query.
+	Range *types.EnrichPolicy `json:"range,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -45,7 +48,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 

@@ -15,21 +15,78 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // MlInferenceDeployments type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/xpack/usage/types.ts#L213-L218
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/xpack/usage/types.ts#L227-L232
 type MlInferenceDeployments struct {
 	Count           int                          `json:"count"`
 	InferenceCounts JobStatistics                `json:"inference_counts"`
 	ModelSizesBytes JobStatistics                `json:"model_sizes_bytes"`
 	TimeMs          MlInferenceDeploymentsTimeMs `json:"time_ms"`
+}
+
+func (s *MlInferenceDeployments) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "count":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Count = value
+			case float64:
+				f := int(v)
+				s.Count = f
+			}
+
+		case "inference_counts":
+			if err := dec.Decode(&s.InferenceCounts); err != nil {
+				return err
+			}
+
+		case "model_sizes_bytes":
+			if err := dec.Decode(&s.ModelSizesBytes); err != nil {
+				return err
+			}
+
+		case "time_ms":
+			if err := dec.Decode(&s.TimeMs); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewMlInferenceDeployments returns a MlInferenceDeployments.

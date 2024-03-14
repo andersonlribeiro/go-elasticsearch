@@ -15,24 +15,27 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package searchmvt
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/gridaggregationtype"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/gridtype"
 )
 
 // Request holds the request body struct for the package searchmvt
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/_global/search_mvt/SearchMvtRequest.ts#L33-L164
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/_global/search_mvt/SearchMvtRequest.ts#L33-L188
 type Request struct {
 
 	// Aggs Sub-aggregations for the geotile_grid.
@@ -44,6 +47,10 @@ type Request struct {
 	// - min
 	// - sum
 	Aggs map[string]types.Aggregations `json:"aggs,omitempty"`
+	// Buffer Size, in pixels, of a clipping buffer outside the tile. This allows renderers
+	// to avoid outline artifacts from geometries that extend past the extent of the
+	// tile.
+	Buffer *int `json:"buffer,omitempty"`
 	// ExactBounds If false, the meta layer’s feature is the bounding box of the tile.
 	// If true, the meta layer’s feature is a bounding box resulting from a
 	// geo_bounds aggregation. The aggregation runs on <field> values that intersect
@@ -57,6 +64,8 @@ type Request struct {
 	// This parameter does not support fields with array values. Fields with array
 	// values may return inconsistent results.
 	Fields []string `json:"fields,omitempty"`
+	// GridAgg Aggregation used to create a grid for the `field`.
+	GridAgg *gridaggregationtype.GridAggregationType `json:"grid_agg,omitempty"`
 	// GridPrecision Additional zoom levels available through the aggs layer. For example, if
 	// <zoom> is 7
 	// and grid_precision is 8, you can zoom in up to level 15. Accepts 0-8. If 0,
@@ -75,7 +84,7 @@ type Request struct {
 	Query *types.Query `json:"query,omitempty"`
 	// RuntimeMappings Defines one or more runtime fields in the search request. These fields take
 	// precedence over mapped fields with the same name.
-	RuntimeMappings map[string]types.RuntimeField `json:"runtime_mappings,omitempty"`
+	RuntimeMappings types.RuntimeFields `json:"runtime_mappings,omitempty"`
 	// Size Maximum number of features to return in the hits layer. Accepts 0-10000.
 	// If 0, results don’t include the hits layer.
 	Size *int `json:"size,omitempty"`
@@ -88,7 +97,11 @@ type Request struct {
 	// of hits is returned at the cost of some performance. If `false`, the response
 	// does
 	// not include the total number of hits matching the query.
-	TrackTotalHits *types.TrackHits `json:"track_total_hits,omitempty"`
+	TrackTotalHits types.TrackHits `json:"track_total_hits,omitempty"`
+	// WithLabels If `true`, the hits and aggs layers will contain additional point features
+	// representing
+	// suggested label positions for the original features.
+	WithLabels *bool `json:"with_labels,omitempty"`
 }
 
 // NewRequest returns a Request
@@ -100,7 +113,7 @@ func NewRequest() *Request {
 }
 
 // FromJSON allows to load an arbitrary json into the request structure
-func (rb *Request) FromJSON(data string) (*Request, error) {
+func (r *Request) FromJSON(data string) (*Request, error) {
 	var req Request
 	err := json.Unmarshal([]byte(data), &req)
 
@@ -109,4 +122,180 @@ func (rb *Request) FromJSON(data string) (*Request, error) {
 	}
 
 	return &req, nil
+}
+
+func (s *Request) UnmarshalJSON(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "aggs":
+			if s.Aggs == nil {
+				s.Aggs = make(map[string]types.Aggregations, 0)
+			}
+			if err := dec.Decode(&s.Aggs); err != nil {
+				return err
+			}
+
+		case "buffer":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Buffer = &value
+			case float64:
+				f := int(v)
+				s.Buffer = &f
+			}
+
+		case "exact_bounds":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.ExactBounds = &value
+			case bool:
+				s.ExactBounds = &v
+			}
+
+		case "extent":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Extent = &value
+			case float64:
+				f := int(v)
+				s.Extent = &f
+			}
+
+		case "fields":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := new(string)
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.Fields = append(s.Fields, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.Fields); err != nil {
+					return err
+				}
+			}
+
+		case "grid_agg":
+			if err := dec.Decode(&s.GridAgg); err != nil {
+				return err
+			}
+
+		case "grid_precision":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.GridPrecision = &value
+			case float64:
+				f := int(v)
+				s.GridPrecision = &f
+			}
+
+		case "grid_type":
+			if err := dec.Decode(&s.GridType); err != nil {
+				return err
+			}
+
+		case "query":
+			if err := dec.Decode(&s.Query); err != nil {
+				return err
+			}
+
+		case "runtime_mappings":
+			if err := dec.Decode(&s.RuntimeMappings); err != nil {
+				return err
+			}
+
+		case "size":
+
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				s.Size = &value
+			case float64:
+				f := int(v)
+				s.Size = &f
+			}
+
+		case "sort":
+			rawMsg := json.RawMessage{}
+			dec.Decode(&rawMsg)
+			if !bytes.HasPrefix(rawMsg, []byte("[")) {
+				o := new(types.SortCombinations)
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&o); err != nil {
+					return err
+				}
+
+				s.Sort = append(s.Sort, *o)
+			} else {
+				if err := json.NewDecoder(bytes.NewReader(rawMsg)).Decode(&s.Sort); err != nil {
+					return err
+				}
+			}
+
+		case "track_total_hits":
+			if err := dec.Decode(&s.TrackTotalHits); err != nil {
+				return err
+			}
+
+		case "with_labels":
+			var tmp interface{}
+			dec.Decode(&tmp)
+			switch v := tmp.(type) {
+			case string:
+				value, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				s.WithLabels = &value
+			case bool:
+				s.WithLabels = &v
+			}
+
+		}
+	}
+	return nil
 }

@@ -15,16 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 // Code generated from the elasticsearch-specification DO NOT EDIT.
-// https://github.com/elastic/elasticsearch-specification/tree/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33
-
+// https://github.com/elastic/elasticsearch-specification/tree/6e0fb6b929f337b62bf0676bdf503e061121fad2
 
 package types
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"strconv"
+)
+
 // UserProfileUser type.
 //
-// https://github.com/elastic/elasticsearch-specification/blob/66fc1fdaeee07b44c6d4ddcab3bd6934e3625e33/specification/security/_types/UserProfile.ts#L33-L40
+// https://github.com/elastic/elasticsearch-specification/blob/6e0fb6b929f337b62bf0676bdf503e061121fad2/specification/security/_types/UserProfile.ts#L33-L40
 type UserProfileUser struct {
 	Email       string   `json:"email,omitempty"`
 	FullName    string   `json:"full_name,omitempty"`
@@ -32,6 +38,63 @@ type UserProfileUser struct {
 	RealmName   string   `json:"realm_name"`
 	Roles       []string `json:"roles"`
 	Username    string   `json:"username"`
+}
+
+func (s *UserProfileUser) UnmarshalJSON(data []byte) error {
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
+		}
+
+		switch t {
+
+		case "email":
+			var tmp json.RawMessage
+			if err := dec.Decode(&tmp); err != nil {
+				return err
+			}
+			o := string(tmp[:])
+			o, err = strconv.Unquote(o)
+			if err != nil {
+				o = string(tmp[:])
+			}
+			s.Email = o
+
+		case "full_name":
+			if err := dec.Decode(&s.FullName); err != nil {
+				return err
+			}
+
+		case "realm_domain":
+			if err := dec.Decode(&s.RealmDomain); err != nil {
+				return err
+			}
+
+		case "realm_name":
+			if err := dec.Decode(&s.RealmName); err != nil {
+				return err
+			}
+
+		case "roles":
+			if err := dec.Decode(&s.Roles); err != nil {
+				return err
+			}
+
+		case "username":
+			if err := dec.Decode(&s.Username); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
 }
 
 // NewUserProfileUser returns a UserProfileUser.
